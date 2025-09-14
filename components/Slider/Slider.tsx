@@ -1,7 +1,7 @@
 "use client";
-import type React from "react";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo, useRef } from "react";
+import type React from "react";
 
 // Format number with commas
 const formatNumber = (num: number) => {
@@ -17,15 +17,12 @@ const getValueFromPercentage = (
   breakPoint2: number,
 ) => {
   if (percentage <= 33.33) {
-    // First tier
     const tierProgress = percentage / 33.33;
     return min + tierProgress * (breakPoint1 - min);
   } else if (percentage <= 66.66) {
-    // Second tier
     const tierProgress = (percentage - 33.33) / 33.33;
     return breakPoint1 + tierProgress * (breakPoint2 - breakPoint1);
   } else {
-    // Third tier
     const tierProgress = (percentage - 66.66) / 33.34;
     return breakPoint2 + tierProgress * (max - breakPoint2);
   }
@@ -39,7 +36,7 @@ const getNearestStepValue = (
   breakPoint1: number,
   breakPoint2: number,
 ) => {
-  val = Math.max(min, Math.min(max, val)); // Clamp to range
+  val = Math.max(min, Math.min(max, val));
 
   if (val <= breakPoint1) {
     return Math.round(val / 1000) * 1000;
@@ -58,102 +55,115 @@ const CustomRangeSlider = () => {
   const [value, setValue] = useState(50000);
   const [inputValue, setInputValue] = useState("50,000");
   const [_, setIsEditing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragValue, setDragValue] = useState(50000);
+
+  // Use ref to track if we're in the middle of a drag operation
+  const dragTimeoutRef = useRef<NodeJS.Timeout>(undefined);
 
   const min = 5000;
   const max = 350000;
   const breakPoint1 = 100000;
   const breakPoint2 = 200000;
 
-  // Remove commas and parse number
-  const parseNumber = (str: string) => {
-    return parseInt(str.replace(/,/g, ""), 10); // Added radix 10
-  };
-
-  // Get the appropriate step size for a given value
-  const getStepSize = (val: number) => {
-    if (val <= breakPoint1) return 1000;
-    if (val <= breakPoint2) return 2000;
-    return 5000;
-  };
-
-  // Generate all possible values for the range input
-  const generateValidValues = () => {
+  // Memoize constants that don't change
+  const validValues = useMemo(() => {
     const values = [];
 
-    // From 5k to 100k in 1k steps
     for (let i = min; i <= breakPoint1; i += 1000) {
       values.push(i);
     }
-
-    // From 100k to 200k in 2k steps
     for (let i = breakPoint1 + 2000; i <= breakPoint2; i += 2000) {
       values.push(i);
     }
-
-    // From 200k to 350k in 5k steps
     for (let i = breakPoint2 + 5000; i <= max; i += 5000) {
       values.push(i);
     }
 
     return values;
-  };
-
-  const validValues = generateValidValues();
-
-  // Calculate percentage for proportional positioning
-  const getPercentage = (val: number) => {
-    if (val <= breakPoint1) {
-      // First tier: 0-33.33% of slider width
-      const tierProgress = (val - min) / (breakPoint1 - min);
-      return tierProgress * 33.33;
-    } else if (val <= breakPoint2) {
-      // Second tier: 33.33-66.66% of slider width
-      const tierProgress = (val - breakPoint1) / (breakPoint2 - breakPoint1);
-      return 33.33 + tierProgress * 33.33;
-    } else {
-      // Third tier: 66.66-100% of slider width
-      const tierProgress = (val - breakPoint2) / (max - breakPoint2);
-      return 66.66 + tierProgress * 33.34;
-    }
-  };
-
-  // Get the closest valid value index for the current value
-  // const getClosestValidIndex = (val: number) => {
-  //   let closestIndex = 0;
-  //   let closestDistance = Math.abs(validValues[0] - val);
-  //
-  //   for (let i = 1; i < validValues.length; i++) {
-  //     const distance = Math.abs(validValues[i] - val);
-  //     if (distance < closestDistance) {
-  //       closestDistance = distance;
-  //       closestIndex = i;
-  //     }
-  //   }
-  //
-  //   return closestIndex;
-  // };
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const percentage = (parseInt(e.target.value, 10) / 1000) * 100;
-    const approximateValue = getValueFromPercentage(
-      percentage,
-      min,
-      max,
-      breakPoint1,
-      breakPoint2,
-    );
-    const validValue = getNearestStepValue(
-      approximateValue,
-      min,
-      max,
-      breakPoint1,
-      breakPoint2,
-    );
-    setValue(validValue);
-    setInputValue(formatNumber(validValue));
   }, []);
 
-  const handleStepClick = (stepValue: number) => {
+  const steps = useMemo(() => {
+    const keySteps = [
+      5000, 25000, 50000, 75000, 100000, 150000, 200000, 275000, 350000,
+    ];
+    return keySteps.map((step) =>
+      getNearestStepValue(step, min, max, breakPoint1, breakPoint2),
+    );
+  }, []);
+
+  // Memoize expensive calculations - use dragValue when dragging, otherwise use value
+  const currentPercentage = useMemo(() => {
+    const currentValue = isDragging ? dragValue : value;
+    if (currentValue <= breakPoint1) {
+      const tierProgress = (currentValue - min) / (breakPoint1 - min);
+      return tierProgress * 33.33;
+    } else if (currentValue <= breakPoint2) {
+      const tierProgress =
+        (currentValue - breakPoint1) / (breakPoint2 - breakPoint1);
+      return 33.33 + tierProgress * 33.33;
+    } else {
+      const tierProgress = (currentValue - breakPoint2) / (max - breakPoint2);
+      return 66.66 + tierProgress * 33.34;
+    }
+  }, [value, dragValue, isDragging]);
+
+  const currentStepSize = useMemo(() => {
+    const currentValue = isDragging ? dragValue : value;
+    if (currentValue <= breakPoint1) return 1000;
+    if (currentValue <= breakPoint2) return 2000;
+    return 5000;
+  }, [value, dragValue, isDragging]);
+
+  // Parse number function
+  const parseNumber = useCallback((str: string) => {
+    return parseInt(str.replace(/,/g, ""), 10);
+  }, []);
+
+  // Optimized change handler with reduced calculations during drag
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isDragging) {
+        setIsDragging(true);
+      }
+
+      const percentage = (parseInt(e.target.value, 10) / 1000) * 100;
+      const approximateValue = getValueFromPercentage(
+        percentage,
+        min,
+        max,
+        breakPoint1,
+        breakPoint2,
+      );
+
+      // During drag, only update dragValue for smooth visual movement
+      const validValue = getNearestStepValue(
+        approximateValue,
+        min,
+        max,
+        breakPoint1,
+        breakPoint2,
+      );
+
+      setDragValue(validValue);
+      // Update input value live during dragging
+      setInputValue(formatNumber(validValue));
+
+      // Clear any existing timeout
+      if (dragTimeoutRef.current) {
+        clearTimeout(dragTimeoutRef.current);
+      }
+
+      // Set a timeout to commit the value after drag ends
+      dragTimeoutRef.current = setTimeout(() => {
+        setValue(validValue);
+        setIsDragging(false);
+      }, 150); // Small delay to ensure drag has ended
+    },
+    [isDragging],
+  );
+
+  const handleStepClick = useCallback((stepValue: number) => {
     const validValue = getNearestStepValue(
       stepValue,
       min,
@@ -162,49 +172,39 @@ const CustomRangeSlider = () => {
       breakPoint2,
     );
     setValue(validValue);
+    setDragValue(validValue);
     setInputValue(formatNumber(validValue));
-  };
+  }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+    },
+    [],
+  );
 
-  const handleInputFocus = () => {
+  const handleInputFocus = useCallback(() => {
     setIsEditing(true);
     setInputValue(value.toString());
-  };
+  }, [value]);
 
-  const handleInputBlur = () => {
+  const handleInputBlur = useCallback(() => {
     setIsEditing(false);
     const numericValue = parseNumber(inputValue) || value;
-    // Clamp to range but don't snap to step yet
     const clampedValue = Math.max(min, Math.min(max, numericValue));
     setValue(clampedValue);
+    setDragValue(clampedValue);
     setInputValue(formatNumber(clampedValue));
-  };
+  }, [inputValue, value, parseNumber]);
 
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Changed to KeyboardEvent
-    if (e.key === "Enter") {
-      (e.target as HTMLInputElement).blur();
-    }
-  };
-
-  // Generate step markers
-  const generateSteps = () => {
-    // const steps = [];
-
-    // Manually define key step points that make sense for the 3-tier system
-    const keySteps = [
-      5000, 25000, 50000, 75000, 100000, 150000, 200000, 275000, 350000,
-    ];
-
-    return keySteps.map((step) =>
-      getNearestStepValue(step, min, max, breakPoint1, breakPoint2),
-    );
-  };
-
-  const steps = generateSteps();
+  const handleInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        (e.target as HTMLInputElement).blur();
+      }
+    },
+    [],
+  );
 
   return (
     <div className="w-full max-w-2xl mx-auto p-8">
@@ -231,23 +231,28 @@ const CustomRangeSlider = () => {
 
         {/* Step size indicator */}
         <p className="text-sm text-gray-500">
-          Current step size: ${formatNumber(getStepSize(value))}
+          Current step size: ${formatNumber(currentStepSize)}
           <span className="ml-2 text-xs">
             (
-            {value <= breakPoint1
+            {(isDragging ? dragValue : value) <= breakPoint1
               ? "≤$100k"
-              : value <= breakPoint2
+              : (isDragging ? dragValue : value) <= breakPoint2
                 ? "$100k-$200k"
                 : ">$200k"}
             )
           </span>
-          {!validValues.includes(value) && (
+          {!isDragging && !validValues.includes(value) && (
             <span className="ml-2 text-orange-600 text-xs font-medium">
               (Will snap to $
               {formatNumber(
                 getNearestStepValue(value, min, max, breakPoint1, breakPoint2),
               )}{" "}
               when slider moves)
+            </span>
+          )}
+          {isDragging && (
+            <span className="ml-2 text-blue-600 text-xs font-medium">
+              (Dragging...)
             </span>
           )}
         </p>
@@ -270,26 +275,34 @@ const CustomRangeSlider = () => {
       <div className="relative mb-8">
         {/* Track */}
         <div className="relative h-2 bg-gray-200 rounded-full">
-          {/* Progress fill */}
+          {/* Progress fill - using transform instead of width for better performance */}
           <div
-            className="absolute h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-200"
-            style={{ width: `${getPercentage(value)}%` }}
+            className="absolute h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full will-change-transform"
+            style={{
+              transform: `scaleX(${currentPercentage / 100})`,
+              transformOrigin: "left",
+              width: "100%",
+            }}
           />
 
-          {/* Thumb */}
+          {/* Thumb - using transform for positioning */}
           <div
-            className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-lg transform -translate-y-2 transition-all duration-200 hover:scale-110"
-            style={{ left: `calc(${getPercentage(value)}% - 12px)` }}
+            className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110"
+            style={{
+              left: `calc(${currentPercentage}% - 12px)`,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
           />
         </div>
 
-        {/* Hidden input */}
+        {/* Hidden input with optimized range */}
         <input
           type="range"
           min={0}
           max={1000}
           step={1}
-          value={getPercentage(value) * 10} // Convert 0-100% to 0-1000 for better precision
+          value={currentPercentage * 10}
           onChange={handleChange}
           className="absolute inset-0 w-full h-2 opacity-0 cursor-pointer"
         />
@@ -303,11 +316,10 @@ const CustomRangeSlider = () => {
               type="button"
               key={stepValue}
               onClick={() => handleStepClick(stepValue)}
-              className={`flex flex-col items-center group transition-all duration-200 ${
+              className={`flex flex-col items-center group transition-colors duration-200 ${
                 value === stepValue ? "text-blue-600" : "text-gray-500"
               } hover:text-blue-700`}
             >
-              {/* Step dot */}
               <div
                 className={`w-3 h-3 rounded-full mb-2 transition-all duration-200 ${
                   value === stepValue
@@ -315,8 +327,6 @@ const CustomRangeSlider = () => {
                     : "bg-gray-300 group-hover:bg-blue-400"
                 }`}
               />
-
-              {/* Step label */}
               <span className="text-xs font-medium whitespace-nowrap">
                 ${formatNumber(stepValue / 1000)}k
               </span>
@@ -353,7 +363,9 @@ const CustomRangeSlider = () => {
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-600">
           Selected Value:{" "}
-          <span className="font-mono font-bold">${formatNumber(value)}</span>
+          <span className="font-mono font-bold">
+            ${formatNumber(Math.round(isDragging ? dragValue : value))}
+          </span>
         </p>
         <p className="text-xs text-gray-500 mt-1">
           Range: ${formatNumber(min)} - ${formatNumber(max)}

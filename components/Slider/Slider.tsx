@@ -1,7 +1,22 @@
 "use client";
 
-import { useCallback, useState, useMemo, useRef } from "react";
+import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import type React from "react";
+
+// New props interface for external control
+interface CustomRangeSliderProps {
+  value?: number;
+  onChange?: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  formatValue?: (value: number) => string;
+  label?: string;
+  showSteps?: boolean;
+  showQuickSelect?: boolean;
+  showDebugInfo?: boolean;
+  className?: string;
+}
 
 // Format number with commas
 const formatNumber = (num: number) => {
@@ -51,25 +66,92 @@ const getNearestStepValue = (
   }
 };
 
-const CustomRangeSlider = () => {
-  const [value, setValue] = useState(50000);
-  const [inputValue, setInputValue] = useState("50,000");
+// Simple step calculation for external control
+const getSimpleStepValue = (
+  val: number,
+  min: number,
+  max: number,
+  step: number,
+) => {
+  const steppedValue = Math.round((val - min) / step) * step + min;
+  return Math.max(min, Math.min(max, steppedValue));
+};
+
+const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
+  value: externalValue,
+  onChange: externalOnChange,
+  min: externalMin,
+  max: externalMax,
+  step: externalStep,
+  formatValue,
+  label = "Range",
+  showSteps = true,
+  showQuickSelect = true,
+  showDebugInfo = true,
+  className = "",
+}) => {
+  // Determine if we're in external control mode
+  const isExternallyControlled =
+    externalValue !== undefined && externalOnChange !== undefined;
+
+  // Default values (original slider configuration)
+  const defaultMin = 5000;
+  const defaultMax = 350000;
+  const defaultValue = 50000;
+
+  // Use external props or defaults
+  const min = externalMin ?? defaultMin;
+  const max = externalMax ?? defaultMax;
+  const step = externalStep ?? 1000;
+  const initialValue = externalValue ?? defaultValue;
+
+  // Internal state (used when not externally controlled)
+  const [internalValue, setInternalValue] = useState(initialValue);
+  const [inputValue, setInputValue] = useState(
+    formatValue ? formatValue(initialValue) : formatNumber(initialValue),
+  );
   const [_, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragValue, setDragValue] = useState(50000);
+  const [dragValue, setDragValue] = useState(initialValue);
 
   // Use ref to track if we're in the middle of a drag operation
   const dragTimeoutRef = useRef<NodeJS.Timeout>(undefined);
 
-  const min = 5000;
-  const max = 350000;
-  const breakPoint1 = 100000;
-  const breakPoint2 = 200000;
+  // Get current value (external or internal)
+  const currentValue = isExternallyControlled ? externalValue : internalValue;
 
-  // Memoize constants that don't change
+  // Update internal state when external value changes
+  useEffect(() => {
+    if (isExternallyControlled && externalValue !== undefined) {
+      setInternalValue(externalValue);
+      setDragValue(externalValue);
+      const formatted = formatValue
+        ? formatValue(externalValue)
+        : formatNumber(externalValue);
+      setInputValue(formatted);
+    }
+  }, [externalValue, formatValue, isExternallyControlled]);
+
+  // Determine if we should use complex stepping (original behavior) or simple stepping
+  const useComplexStepping =
+    !isExternallyControlled && min === defaultMin && max === defaultMax;
+
+  const breakPoint1 = useComplexStepping ? 100000 : min + (max - min) * 0.33;
+  const breakPoint2 = useComplexStepping ? 200000 : min + (max - min) * 0.66;
+
+  // Memoize valid values for complex stepping
   const validValues = useMemo(() => {
-    const values = [];
+    if (!useComplexStepping) {
+      // Simple stepping: generate values based on step
+      const values = [];
+      for (let i = min; i <= max; i += step) {
+        values.push(i);
+      }
+      return values;
+    }
 
+    // Original complex stepping logic
+    const values = [];
     for (let i = min; i <= breakPoint1; i += 1000) {
       values.push(i);
     }
@@ -79,46 +161,118 @@ const CustomRangeSlider = () => {
     for (let i = breakPoint2 + 5000; i <= max; i += 5000) {
       values.push(i);
     }
-
     return values;
-  }, []);
+  }, [min, max, step, useComplexStepping, breakPoint1, breakPoint2]);
 
   const steps = useMemo(() => {
+    if (!showSteps) return [];
+
+    if (!useComplexStepping) {
+      // Simple steps: distribute evenly across range
+      const stepCount = 8;
+      const stepSize = (max - min) / (stepCount - 1);
+      return Array.from(
+        { length: stepCount },
+        (_, i) => min + Math.round(stepSize * i),
+      );
+    }
+
+    // Original complex steps
     const keySteps = [
       5000, 25000, 50000, 75000, 100000, 150000, 200000, 275000, 350000,
     ];
-    return keySteps.map((step) =>
-      getNearestStepValue(step, min, max, breakPoint1, breakPoint2),
-    );
-  }, []);
+    return keySteps
+      .filter((step) => step >= min && step <= max)
+      .map((step) =>
+        getNearestStepValue(step, min, max, breakPoint1, breakPoint2),
+      );
+  }, [min, max, showSteps, useComplexStepping, breakPoint1, breakPoint2]);
 
-  // Memoize expensive calculations - use dragValue when dragging, otherwise use value
+  // Calculate percentage for slider position
   const currentPercentage = useMemo(() => {
-    const currentValue = isDragging ? dragValue : value;
-    if (currentValue <= breakPoint1) {
-      const tierProgress = (currentValue - min) / (breakPoint1 - min);
+    const workingValue = isDragging ? dragValue : currentValue;
+
+    if (!useComplexStepping) {
+      // Simple percentage calculation
+      return ((workingValue - min) / (max - min)) * 100;
+    }
+
+    // Original complex percentage calculation
+    if (workingValue <= breakPoint1) {
+      const tierProgress = (workingValue - min) / (breakPoint1 - min);
       return tierProgress * 33.33;
-    } else if (currentValue <= breakPoint2) {
+    } else if (workingValue <= breakPoint2) {
       const tierProgress =
-        (currentValue - breakPoint1) / (breakPoint2 - breakPoint1);
+        (workingValue - breakPoint1) / (breakPoint2 - breakPoint1);
       return 33.33 + tierProgress * 33.33;
     } else {
-      const tierProgress = (currentValue - breakPoint2) / (max - breakPoint2);
+      const tierProgress = (workingValue - breakPoint2) / (max - breakPoint2);
       return 66.66 + tierProgress * 33.34;
     }
-  }, [value, dragValue, isDragging]);
+  }, [
+    currentValue,
+    dragValue,
+    isDragging,
+    min,
+    max,
+    useComplexStepping,
+    breakPoint1,
+    breakPoint2,
+  ]);
 
   const currentStepSize = useMemo(() => {
-    const currentValue = isDragging ? dragValue : value;
-    if (currentValue <= breakPoint1) return 1000;
-    if (currentValue <= breakPoint2) return 2000;
+    if (!useComplexStepping) return step;
+
+    const workingValue = isDragging ? dragValue : currentValue;
+    if (workingValue <= breakPoint1) return 1000;
+    if (workingValue <= breakPoint2) return 2000;
     return 5000;
-  }, [value, dragValue, isDragging]);
+  }, [
+    currentValue,
+    dragValue,
+    isDragging,
+    useComplexStepping,
+    step,
+    breakPoint1,
+    breakPoint2,
+  ]);
 
   // Parse number function
   const parseNumber = useCallback((str: string) => {
     return parseInt(str.replace(/,/g, ""), 10);
   }, []);
+
+  // Handle value updates
+  const updateValue = useCallback(
+    (newValue: number) => {
+      const finalValue = useComplexStepping
+        ? getNearestStepValue(newValue, min, max, breakPoint1, breakPoint2)
+        : getSimpleStepValue(newValue, min, max, step);
+
+      if (isExternallyControlled && externalOnChange) {
+        externalOnChange(finalValue);
+      } else {
+        setInternalValue(finalValue);
+      }
+
+      setDragValue(finalValue);
+      const formatted = formatValue
+        ? formatValue(finalValue)
+        : formatNumber(finalValue);
+      setInputValue(formatted);
+    },
+    [
+      isExternallyControlled,
+      externalOnChange,
+      formatValue,
+      useComplexStepping,
+      min,
+      max,
+      step,
+      breakPoint1,
+      breakPoint2,
+    ],
+  );
 
   // Optimized change handler with reduced calculations during drag
   const handleChange = useCallback(
@@ -127,27 +281,40 @@ const CustomRangeSlider = () => {
         setIsDragging(true);
       }
 
-      const percentage = (parseInt(e.target.value, 10) / 1000) * 100;
-      const approximateValue = getValueFromPercentage(
-        percentage,
-        min,
-        max,
-        breakPoint1,
-        breakPoint2,
-      );
+      let approximateValue: number;
 
-      // During drag, only update dragValue for smooth visual movement
-      const validValue = getNearestStepValue(
-        approximateValue,
-        min,
-        max,
-        breakPoint1,
-        breakPoint2,
-      );
+      if (useComplexStepping) {
+        // Original complex calculation
+        const percentage = (parseInt(e.target.value, 10) / 1000) * 100;
+        approximateValue = getValueFromPercentage(
+          percentage,
+          min,
+          max,
+          breakPoint1,
+          breakPoint2,
+        );
+      } else {
+        // Simple linear calculation
+        const sliderValue = parseInt(e.target.value, 10);
+        const percentage = sliderValue / 1000; // Assuming slider max is 1000
+        approximateValue = min + percentage * (max - min);
+      }
+
+      const validValue = useComplexStepping
+        ? getNearestStepValue(
+            approximateValue,
+            min,
+            max,
+            breakPoint1,
+            breakPoint2,
+          )
+        : getSimpleStepValue(approximateValue, min, max, step);
 
       setDragValue(validValue);
-      // Update input value live during dragging
-      setInputValue(formatNumber(validValue));
+      const formatted = formatValue
+        ? formatValue(validValue)
+        : formatNumber(validValue);
+      setInputValue(formatted);
 
       // Clear any existing timeout
       if (dragTimeoutRef.current) {
@@ -156,25 +323,29 @@ const CustomRangeSlider = () => {
 
       // Set a timeout to commit the value after drag ends
       dragTimeoutRef.current = setTimeout(() => {
-        setValue(validValue);
+        updateValue(validValue);
         setIsDragging(false);
-      }, 150); // Small delay to ensure drag has ended
+      }, 150);
     },
-    [isDragging],
-  );
-
-  const handleStepClick = useCallback((stepValue: number) => {
-    const validValue = getNearestStepValue(
-      stepValue,
+    [
+      isDragging,
+      updateValue,
+      formatValue,
+      useComplexStepping,
       min,
       max,
+      step,
       breakPoint1,
       breakPoint2,
-    );
-    setValue(validValue);
-    setDragValue(validValue);
-    setInputValue(formatNumber(validValue));
-  }, []);
+    ],
+  );
+
+  const handleStepClick = useCallback(
+    (stepValue: number) => {
+      updateValue(stepValue);
+    },
+    [updateValue],
+  );
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,17 +356,15 @@ const CustomRangeSlider = () => {
 
   const handleInputFocus = useCallback(() => {
     setIsEditing(true);
-    setInputValue(value.toString());
-  }, [value]);
+    setInputValue(currentValue.toString());
+  }, [currentValue]);
 
   const handleInputBlur = useCallback(() => {
     setIsEditing(false);
-    const numericValue = parseNumber(inputValue) || value;
+    const numericValue = parseNumber(inputValue) || currentValue;
     const clampedValue = Math.max(min, Math.min(max, numericValue));
-    setValue(clampedValue);
-    setDragValue(clampedValue);
-    setInputValue(formatNumber(clampedValue));
-  }, [inputValue, value, parseNumber]);
+    updateValue(clampedValue);
+  }, [inputValue, currentValue, parseNumber, min, max, updateValue]);
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -207,14 +376,14 @@ const CustomRangeSlider = () => {
   );
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8">
+    <div className={`w-full max-w-2xl mx-auto ${className}`}>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Loan Amount</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">{label}</h2>
 
         {/* Editable input field */}
         <div className="relative mb-4">
           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-blue-600 pointer-events-none">
-            $
+            {formatValue ? "" : "$"}
           </span>
           <input
             id="loan-input"
@@ -230,52 +399,81 @@ const CustomRangeSlider = () => {
         </div>
 
         {/* Step size indicator */}
-        <p className="text-sm text-gray-500">
-          Current step size: ${formatNumber(currentStepSize)}
-          <span className="ml-2 text-xs">
-            (
-            {(isDragging ? dragValue : value) <= breakPoint1
-              ? "≤$100k"
-              : (isDragging ? dragValue : value) <= breakPoint2
-                ? "$100k-$200k"
-                : ">$200k"}
-            )
-          </span>
-          {!isDragging && !validValues.includes(value) && (
-            <span className="ml-2 text-orange-600 text-xs font-medium">
-              (Will snap to $
-              {formatNumber(
-                getNearestStepValue(value, min, max, breakPoint1, breakPoint2),
-              )}{" "}
-              when slider moves)
+        {showDebugInfo && (
+          <p className="text-sm text-gray-500">
+            Current step size:{" "}
+            {formatValue
+              ? formatValue(currentStepSize)
+              : `$${formatNumber(currentStepSize)}`}
+            <span className="ml-2 text-xs">
+              (
+              {useComplexStepping
+                ? currentValue <= breakPoint1
+                  ? "≤$100k"
+                  : currentValue <= breakPoint2
+                    ? "$100k-$200k"
+                    : ">$200k"
+                : `${formatValue ? formatValue(min) : `$${formatNumber(min)}`}-${formatValue ? formatValue(max) : `$${formatNumber(max)}`}`}
+              )
             </span>
-          )}
-          {isDragging && (
-            <span className="ml-2 text-blue-600 text-xs font-medium">
-              (Dragging...)
-            </span>
-          )}
-        </p>
+            {!isDragging && !validValues.includes(currentValue) && (
+              <span className="ml-2 text-orange-600 text-xs font-medium">
+                (Will snap to{" "}
+                {formatValue
+                  ? formatValue(
+                      useComplexStepping
+                        ? getNearestStepValue(
+                            currentValue,
+                            min,
+                            max,
+                            breakPoint1,
+                            breakPoint2,
+                          )
+                        : getSimpleStepValue(currentValue, min, max, step),
+                    )
+                  : `$${formatNumber(
+                      useComplexStepping
+                        ? getNearestStepValue(
+                            currentValue,
+                            min,
+                            max,
+                            breakPoint1,
+                            breakPoint2,
+                          )
+                        : getSimpleStepValue(currentValue, min, max, step),
+                    )}`}{" "}
+                when slider moves)
+              </span>
+            )}
+            {isDragging && (
+              <span className="ml-2 text-blue-600 text-xs font-medium">
+                (Dragging...)
+              </span>
+            )}
+          </p>
+        )}
       </div>
 
-      {/* Visual tier indicators */}
-      <div className="relative mb-2">
-        <div className="flex h-1 rounded-full overflow-hidden">
-          <div className="w-1/3 bg-blue-200"></div>
-          <div className="w-1/3 bg-green-200"></div>
-          <div className="w-1/3 bg-purple-200"></div>
+      {/* Visual tier indicators - only show for complex stepping */}
+      {useComplexStepping && (
+        <div className="relative mb-2">
+          <div className="flex h-1 rounded-full overflow-hidden">
+            <div className="w-1/3 bg-blue-200"></div>
+            <div className="w-1/3 bg-green-200"></div>
+            <div className="w-1/3 bg-purple-200"></div>
+          </div>
+          <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <span>$5k-$100k (1k steps)</span>
+            <span>$100k-$200k (2k steps)</span>
+            <span>$200k-$350k (5k steps)</span>
+          </div>
         </div>
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
-          <span>$5k-$100k (1k steps)</span>
-          <span>$100k-$200k (2k steps)</span>
-          <span>$200k-$350k (5k steps)</span>
-        </div>
-      </div>
+      )}
 
       <div className="relative mb-8">
         {/* Track */}
         <div className="relative h-2 bg-gray-200 rounded-full">
-          {/* Progress fill - using transform instead of width for better performance */}
+          {/* Progress fill */}
           <div
             className="absolute h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full will-change-transform"
             style={{
@@ -285,7 +483,7 @@ const CustomRangeSlider = () => {
             }}
           />
 
-          {/* Thumb - using transform for positioning */}
+          {/* Thumb */}
           <div
             className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110"
             style={{
@@ -309,71 +507,100 @@ const CustomRangeSlider = () => {
       </div>
 
       {/* Step markers */}
-      <div className="relative mb-6">
-        <div className="flex justify-between items-center">
-          {steps.map((stepValue) => (
+      {showSteps && steps.length > 0 && (
+        <div className="relative mb-6">
+          <div className="flex justify-between items-center">
+            {steps.map((stepValue) => (
+              <button
+                type="button"
+                key={stepValue}
+                onClick={() => handleStepClick(stepValue)}
+                className={`flex flex-col items-center group transition-colors duration-200 ${
+                  currentValue === stepValue ? "text-blue-600" : "text-gray-500"
+                } hover:text-blue-700`}
+              >
+                <div
+                  className={`w-3 h-3 rounded-full mb-2 transition-all duration-200 ${
+                    currentValue === stepValue
+                      ? "bg-blue-600 scale-125"
+                      : "bg-gray-300 group-hover:bg-blue-400"
+                  }`}
+                />
+                <span className="text-xs font-medium whitespace-nowrap">
+                  {formatValue
+                    ? formatValue(stepValue)
+                    : `$${formatNumber(stepValue / 1000)}k`}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick select buttons */}
+      {showQuickSelect && (
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          {(useComplexStepping
+            ? [25000, 50000, 100000, 200000]
+            : [
+                min + (max - min) * 0.2,
+                min + (max - min) * 0.4,
+                min + (max - min) * 0.6,
+                min + (max - min) * 0.8,
+              ]
+          ).map((quickValue) => (
             <button
               type="button"
-              key={stepValue}
-              onClick={() => handleStepClick(stepValue)}
-              className={`flex flex-col items-center group transition-colors duration-200 ${
-                value === stepValue ? "text-blue-600" : "text-gray-500"
-              } hover:text-blue-700`}
+              key={quickValue}
+              onClick={() => handleStepClick(quickValue)}
+              className={`py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
+                currentValue === quickValue
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
+              }`}
             >
-              <div
-                className={`w-3 h-3 rounded-full mb-2 transition-all duration-200 ${
-                  value === stepValue
-                    ? "bg-blue-600 scale-125"
-                    : "bg-gray-300 group-hover:bg-blue-400"
-                }`}
-              />
-              <span className="text-xs font-medium whitespace-nowrap">
-                ${formatNumber(stepValue / 1000)}k
-              </span>
+              {formatValue
+                ? formatValue(quickValue)
+                : `$${formatNumber(quickValue / 1000)}k`}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Quick select buttons */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {[25000, 50000, 100000, 200000].map((quickValue) => (
-          <button
-            type="button"
-            key={quickValue}
-            onClick={() => handleStepClick(quickValue)}
-            className={`py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
-              value === quickValue
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
-            }`}
-          >
-            ${formatNumber(quickValue / 1000)}k
-          </button>
-        ))}
-      </div>
+      )}
 
       {/* Min/Max labels */}
       <div className="flex justify-between text-sm text-gray-500">
-        <span>${formatNumber(min)}</span>
-        <span>${formatNumber(max)}</span>
+        <span>{formatValue ? formatValue(min) : `$${formatNumber(min)}`}</span>
+        <span>{formatValue ? formatValue(max) : `$${formatNumber(max)}`}</span>
       </div>
 
-      {/* Output for debugging */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-600">
-          Selected Value:{" "}
-          <span className="font-mono font-bold">
-            ${formatNumber(Math.round(isDragging ? dragValue : value))}
-          </span>
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Range: ${formatNumber(min)} - ${formatNumber(max)}
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Steps: $1k (≤$100k) → $2k ($100k-$200k) → $5k ({">"}$200k)
-        </p>
-      </div>
+      {/* Debug output */}
+      {showDebugInfo && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600">
+            Selected Value:{" "}
+            <span className="font-mono font-bold">
+              {formatValue
+                ? formatValue(Math.round(isDragging ? dragValue : currentValue))
+                : `$${formatNumber(Math.round(isDragging ? dragValue : currentValue))}`}
+            </span>
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Range:{" "}
+            {formatValue
+              ? `${formatValue(min)} - ${formatValue(max)}`
+              : `$${formatNumber(min)} - $${formatNumber(max)}`}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Mode:{" "}
+            {isExternallyControlled ? "External Control" : "Internal State"}
+          </p>
+          {useComplexStepping && (
+            <p className="text-xs text-gray-500 mt-1">
+              Steps: $1k (≤$100k) → $2k ($100k-$200k) → $5k ({">"}$200k)
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

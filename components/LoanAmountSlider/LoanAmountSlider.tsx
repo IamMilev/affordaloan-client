@@ -1,6 +1,5 @@
 "use client";
 
-import { DollarSign } from "lucide-react";
 import CustomRangeSlider from "@/components/Slider/Slider";
 import type { LoanTypeValue } from "@/types/loan";
 
@@ -35,18 +34,11 @@ const LoanAmountSlider: React.FC<LoanAmountSliderProps> = ({
     <div className="mb-8">
       <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
-          3
+          2
         </span>
         Размер на кредита
       </h2>
       <div className="space-y-4">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-2xl font-bold text-blue-600">
-            {formatNumber(loanAmount)} лв.
-          </span>
-          <DollarSign className="w-6 h-6 text-blue-600" />
-        </div>
-
         <CustomRangeSlider
           value={loanAmount}
           onChange={onLoanAmountChange}
@@ -55,13 +47,9 @@ const LoanAmountSlider: React.FC<LoanAmountSliderProps> = ({
           step={currentRange.step}
           formatValue={(val) => `${formatNumber(val)} лв.`}
           label="Размер на кредита"
+          valueTextSize="3xl"
           showDebugInfo={false}
         />
-
-        <div className="flex justify-between text-sm text-gray-500 mt-2">
-          <span>{formatNumber(currentRange.min)} лв.</span>
-          <span>{formatNumber(currentRange.max)} лв.</span>
-        </div>
       </div>
     </div>
   );

@@ -5,6 +5,9 @@ export interface LoanData {
   income: string;
   loanAmount: number;
   term: number;
+  activeDebt?: number;
+  propertyValue?: number;
+  interest?: string;
 }
 
 export interface LoanAmountRanges {
@@ -17,4 +20,14 @@ export interface LoanCalculationResult {
   totalPayment: number;
   isAffordable: boolean;
   debtToIncomeRatio: number;
+}
+
+export type InterestRates = Record<LoanTypeValue, number>;
+
+export interface ContactData {
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  contactMethod: "email" | "phone" | "both";
 }

@@ -1,10 +1,11 @@
-import type { LoanTypeValue } from "@/types/loan";
+import type { LoanTypeValue, InterestRates } from "@/types/loan";
 
 interface LoanPreviewCardProps {
   loanType: LoanTypeValue | null;
   income: string;
   loanAmount: number;
   term: number;
+  interestRates: InterestRates;
 }
 
 const formatNumber = (num: number): string => {
@@ -16,15 +17,16 @@ const LoanPreviewCard: React.FC<LoanPreviewCardProps> = ({
   income,
   loanAmount,
   term,
+  interestRates,
 }) => {
-  // Mock calculation for preview (real calculation will be in API)
+  const { mortgage, consumer } = interestRates;
   const calculateMonthlyPayment = (): number => {
     if (!loanAmount || !term) return 0;
 
-    // Simple interest calculation for preview
-    const interestRate = loanType === "mortgage" ? 0.025 : 0.07;
-    const monthlyRate = interestRate / 12;
-    const payments = term * 12;
+    const interestRate = loanType === "mortgage" ? mortgage : consumer;
+    const annualRate = interestRate / 100;
+    const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
+    const payments = term;
 
     if (monthlyRate === 0) return loanAmount / payments;
 
@@ -38,7 +40,7 @@ const LoanPreviewCard: React.FC<LoanPreviewCardProps> = ({
   const incomeNumber = parseFloat(income.replace(/,/g, "")) || 0;
   const paymentRatio = incomeNumber > 0 ? monthlyPayment / incomeNumber : 0;
   const isAffordable = paymentRatio <= 0.4; // 40% debt-to-income ratio
-  const totalPayment = monthlyPayment * term * 12;
+  const totalPayment = monthlyPayment * term;
 
   if (!loanType || !income || incomeNumber === 0) {
     return null;

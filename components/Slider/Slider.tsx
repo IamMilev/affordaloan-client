@@ -16,6 +16,7 @@ interface CustomRangeSliderProps {
   showQuickSelect?: boolean;
   showDebugInfo?: boolean;
   className?: string;
+  valueTextSize?: string;
 }
 
 // Format number with commas
@@ -84,11 +85,11 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
   max: externalMax,
   step: externalStep,
   formatValue,
-  label = "Range",
-  showSteps = true,
+  showSteps = false,
   showQuickSelect = true,
   showDebugInfo = true,
   className = "",
+  valueTextSize,
 }) => {
   // Determine if we're in external control mode
   const isExternallyControlled =
@@ -377,9 +378,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
 
   return (
     <div className={`w-full max-w-2xl mx-auto ${className}`}>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">{label}</h2>
-
+      <div className="mb-4">
         {/* Editable input field */}
         <div className="relative mb-4">
           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-blue-600 pointer-events-none">
@@ -393,7 +392,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
-            className="w-full pl-10 pr-4 py-3 text-3xl font-bold text-blue-600 bg-transparent border-2 border-transparent rounded-lg hover:border-blue-200 focus:border-blue-400 focus:outline-none transition-all duration-200"
+            className={`w-full ps-2 pl-10 pr-4 py-3 ${valueTextSize ? "text-" + valueTextSize : "text-2xl"} font-bold text-blue-600 bg-transparent border-2 border-transparent rounded-lg hover:border-blue-200 focus:border-blue-400 focus:outline-none transition-all duration-200`}
             placeholder="Enter amount"
           />
         </div>
@@ -470,7 +469,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
         </div>
       )}
 
-      <div className="relative mb-8">
+      <div className="relative mb-6">
         {/* Track */}
         <div className="relative h-2 bg-gray-200 rounded-full">
           {/* Progress fill */}
@@ -485,7 +484,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
 
           {/* Thumb */}
           <div
-            className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110"
+            className="absolute w-8 h-8 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110"
             style={{
               left: `calc(${currentPercentage}% - 12px)`,
               top: "50%",
@@ -504,6 +503,15 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           onChange={handleChange}
           className="absolute inset-0 w-full h-2 opacity-0 cursor-pointer"
         />
+        {/* Min/Max labels */}
+        <div className="flex justify-between text-sm text-gray-500 mt-4">
+          <span>
+            {formatValue ? formatValue(min) : `$${formatNumber(min)}`}
+          </span>
+          <span>
+            {formatValue ? formatValue(max) : `$${formatNumber(max)}`}
+          </span>
+        </div>
       </div>
 
       {/* Step markers */}
@@ -566,12 +574,6 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           ))}
         </div>
       )}
-
-      {/* Min/Max labels */}
-      <div className="flex justify-between text-sm text-gray-500">
-        <span>{formatValue ? formatValue(min) : `$${formatNumber(min)}`}</span>
-        <span>{formatValue ? formatValue(max) : `$${formatNumber(max)}`}</span>
-      </div>
 
       {/* Debug output */}
       {showDebugInfo && (

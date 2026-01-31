@@ -30,19 +30,14 @@ const IncomeInput: React.FC<IncomeInputProps> = ({
 
   if (useSlider) {
     return (
-      <div className="mb-8">
+      <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
           <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
-            2
+            3
           </span>
           Месечни доходи (нето)
         </h2>
         <div className="mb-4">
-          <div className="text-center mb-4">
-            <span className="text-3xl font-bold text-blue-600">
-              {income || "0"} лв.
-            </span>
-          </div>
           <CustomRangeSlider
             value={income ? parseInt(income.replace(/,/g, "")) : 1000}
             onChange={handleSliderChange}
@@ -51,6 +46,9 @@ const IncomeInput: React.FC<IncomeInputProps> = ({
             step={100}
             formatValue={(val) => `${formatNumber(val)} лв.`}
             label="Месечни доходи"
+            showDebugInfo={false}
+            showSteps={false}
+            showQuickSelect={false}
           />
         </div>
       </div>
@@ -58,7 +56,7 @@ const IncomeInput: React.FC<IncomeInputProps> = ({
   }
 
   return (
-    <div className="mb-8">
+    <div className="mb-4">
       <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
           2

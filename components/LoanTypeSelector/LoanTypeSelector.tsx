@@ -49,27 +49,30 @@ const LoanTypeSelector: React.FC<LoanTypeSelectorProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {loanTypes.map((type) => (
           <button
+            type="button"
             key={type.id}
             onClick={() => onTypeSelect(type.id)}
-            className={`p-6 border-2 rounded-xl transition-all duration-200 text-left ${
+            className={`flex p-6 rounded-xl transition-all duration-200 text-left ${
               selectedType === type.id
                 ? `${type.bgColor} border-current ring-2 ring-blue-200 shadow-lg`
                 : "bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
             }`}
           >
             <div
-              className={`${selectedType === type.id ? type.color : "text-gray-600"} mb-3`}
+              className={`${selectedType === type.id ? type.color : "text-gray-600"}  mr-3`}
             >
               {type.icon}
             </div>
-            <h3
-              className={`text-lg font-bold mb-1 ${
-                selectedType === type.id ? type.color : "text-gray-800"
-              }`}
-            >
-              {type.title}
-            </h3>
-            <p className="text-gray-600 text-sm">{type.subtitle}</p>
+            <div>
+              <h3
+                className={` font-bold mb-1 ${
+                  selectedType === type.id ? type.color : "text-gray-800"
+                }`}
+              >
+                {type.title}
+              </h3>
+              <p className="text-gray-600 text-sm">{type.subtitle}</p>
+            </div>
           </button>
         ))}
       </div>

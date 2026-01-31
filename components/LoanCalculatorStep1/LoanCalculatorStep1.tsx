@@ -8,12 +8,11 @@ import LoanTypeSelector from "@/components/LoanTypeSelector/LoanTypeSelector";
 import IncomeInput from "@/components/IncomeInput/IncomeInput";
 import LoanAmountSlider from "@/components/LoanAmountSlider/LoanAmountSlider";
 import TermSelector from "@/components/TermSelector/TermSelector";
-import LoanPreviewCard from "@/components/LoanPreviewCard/LoanPreviewCard";
 import ProgressIndicator from "@/components/ProgressIndicator/ProgressIndicator";
 import type { LoanData, LoanTypeValue } from "@/types/loan";
 
 interface LoanCalculatorStep1Props {
-  onContinue?: (data: LoanData) => void;
+  onContinue?: (data: LoanData, step: number) => void;
   useIncomeSlider?: boolean;
 }
 
@@ -22,10 +21,10 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
   useIncomeSlider = false,
 }) => {
   const [loanData, setLoanData] = useState<LoanData>({
-    loanType: null,
-    income: "",
+    loanType: "mortgage",
+    income: "1200",
     loanAmount: 150000,
-    term: 20,
+    term: 120,
   });
 
   const handleLoanTypeSelect = useCallback(
@@ -67,10 +66,8 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
 
   const handleContinue = () => {
     if (canContinue && onContinue) {
-      onContinue(loanData);
+      onContinue(loanData, 2);
     }
-    // Fallback for development/testing
-    console.log("Continue to Step 2 with data:", loanData);
   };
 
   return (
@@ -97,13 +94,6 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
             onTypeSelect={handleLoanTypeSelect}
           />
 
-          {/* Income Input */}
-          <IncomeInput
-            income={loanData.income}
-            onIncomeChange={handleIncomeChange}
-            useSlider={useIncomeSlider}
-          />
-
           {/* Loan Amount Slider */}
           <LoanAmountSlider
             loanType={loanData.loanType}
@@ -111,16 +101,20 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
             onLoanAmountChange={handleLoanAmountChange}
           />
 
-          {/* Term Selector */}
-          <TermSelector term={loanData.term} onTermChange={handleTermChange} />
+          <div className="grid grid-cols-2 grid-rows-1 gap-10">
+            {/* Income Input */}
+            <IncomeInput
+              income={loanData.income}
+              onIncomeChange={handleIncomeChange}
+              useSlider={useIncomeSlider}
+            />
 
-          {/* Live Preview Card */}
-          <LoanPreviewCard
-            loanType={loanData.loanType}
-            income={loanData.income}
-            loanAmount={loanData.loanAmount}
-            term={loanData.term}
-          />
+            {/* Term Selector */}
+            <TermSelector
+              term={loanData.term}
+              onTermChange={handleTermChange}
+            />
+          </div>
 
           {/* Continue Button */}
           <button

@@ -4,7 +4,8 @@ import LoanCalculatorFlow from "@/components/LoanCalculatorFlow/LoanCalculatorFl
 import { InterestRates } from "@/types/loan";
 
 export default async function HomePage() {
-  const response = await fetch("http://localhost:3000/api/stats", {
+  const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
+  const response = await fetch(`${backendUrl}/api/stats`, {
     cache: "no-store",
   });
 

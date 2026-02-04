@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import CustomRangeSlider from "@/components/Slider/Slider";
 import type { LoanTypeValue } from "@/types/loan";
 
@@ -18,6 +19,9 @@ const LoanAmountSlider: React.FC<LoanAmountSliderProps> = ({
   loanAmount,
   onLoanAmountChange,
 }) => {
+  const t = useTranslations("step1");
+  const tCommon = useTranslations("common");
+
   const loanAmountRanges = {
     mortgage: { min: 50000, max: 500000, step: 5000 },
     consumer: { min: 5000, max: 100000, step: 1000 },
@@ -36,7 +40,7 @@ const LoanAmountSlider: React.FC<LoanAmountSliderProps> = ({
         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
           2
         </span>
-        Размер на кредита
+        {t("loanAmount.label")}
       </h2>
       <div className="space-y-4">
         <CustomRangeSlider
@@ -45,8 +49,8 @@ const LoanAmountSlider: React.FC<LoanAmountSliderProps> = ({
           min={currentRange.min}
           max={currentRange.max}
           step={currentRange.step}
-          formatValue={(val) => `${formatNumber(val)} лв.`}
-          label="Размер на кредита"
+          formatValue={(val) => `${formatNumber(val)} ${tCommon("currency")}`}
+          label={t("loanAmount.label")}
           valueTextSize="3xl"
           showDebugInfo={false}
         />

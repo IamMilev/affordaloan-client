@@ -31,3 +31,14 @@ export interface ContactData {
   city: string;
   contactMethod: "email" | "phone" | "both";
 }
+
+export interface UserContactData {
+  name: string;
+  email: string;
+}
+
+export interface LoanTypeDefaults {
+  loanAmount: number;
+  term: number;
+  income: string;
+}

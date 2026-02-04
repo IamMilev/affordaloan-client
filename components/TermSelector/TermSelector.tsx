@@ -1,5 +1,7 @@
-import { Calendar } from "lucide-react";
+"use client";
+
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface TermSelectorProps {
   term: number;
@@ -7,6 +9,9 @@ interface TermSelectorProps {
 }
 
 const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
+  const t = useTranslations("step1");
+  const tCommon = useTranslations("common");
+
   const minMonths = 60;
   const maxMonths = 360; // 30 years
 
@@ -21,7 +26,7 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
   }, [term]);
 
   const handleTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
+    const value = parseInt(e.target.value, 10);
     setSliderValue(value);
     onTermChange(value);
   };
@@ -31,19 +36,19 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
     const remainingMonths = months % 12;
 
     if (remainingMonths === 0) {
-      return `${years} год.`;
+      return `${years} ${t("term.years")}`;
     }
 
-    return `${years} год. и ${remainingMonths} мес.`;
+    return `${years} ${t("term.years")} ${tCommon("and")} ${remainingMonths} ${tCommon("month")}`;
   };
 
   return (
     <div className="mb-8">
-      <h2 className="text-lg  mb-4 font-semibold text-gray-800 flex items-center">
+      <h2 className="text-lg mb-4 font-semibold text-gray-800 flex items-center">
         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
           4
         </span>
-        Срок на погасяване
+        {t("term.label")}
       </h2>
 
       <div className="bg-white">
@@ -52,7 +57,7 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
             {formatTerm(sliderValue)}
           </div>
           <div className="mt-4 text-center text-sm text-gray-600">
-            {sliderValue} мес.
+            {sliderValue} {tCommon("months")}
           </div>
         </div>
 
@@ -69,14 +74,13 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
             }}
           />
           <div className="flex justify-between mt-2 text-sm text-gray-500">
-            <span>1 година</span>
-            <span>30 години</span>
+            <span>1 {t("term.year")}</span>
+            <span>30 {t("term.years")}</span>
           </div>
         </div>
       </div>
 
       <style>{`
-{/* absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110 */}
         .slider::-webkit-slider-thumb {
           appearance: none;
           width: 32px;
@@ -87,7 +91,7 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
           border: 4px solid #3b82f6;
           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        
+
         .slider::-moz-range-thumb {
           width: 24px;
           height: 24px;
@@ -97,7 +101,7 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
           border: 3px solid white;
           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        
+
       `}</style>
     </div>
   );

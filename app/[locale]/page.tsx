@@ -1,10 +1,11 @@
-// app/page.tsx (SERVER)
+// app/[locale]/page.tsx (SERVER)
 import type { LoanStatsResponse } from "@/types/api";
 import LoanCalculatorFlow from "@/components/LoanCalculatorFlow/LoanCalculatorFlow";
 import { InterestRates } from "@/types/loan";
 
 export default async function HomePage() {
-  const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
+  const backendUrl =
+    process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
   const response = await fetch(`${backendUrl}/api/stats`, {
     cache: "no-store",
   });

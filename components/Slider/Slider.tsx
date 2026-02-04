@@ -547,7 +547,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
 
       {/* Quick select buttons */}
       {showQuickSelect && (
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-6">
           {(useComplexStepping
             ? [25000, 50000, 100000, 200000]
             : [

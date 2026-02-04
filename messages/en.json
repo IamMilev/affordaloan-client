@@ -1,0 +1,149 @@
+{
+  "common": {
+    "continue": "Continue",
+    "back": "Back",
+    "loading": "Loading...",
+    "error": "Error",
+    "currency": "€",
+    "months": "months",
+    "month": "month",
+    "years": "years",
+    "and": "and"
+  },
+  "step1": {
+    "title": "How much loan can you afford?",
+    "subtitle": "Discover your financing options quickly and easily",
+    "loanAmount": {
+      "label": "Loan Amount"
+    },
+    "income": {
+      "label": "Monthly Income (net)",
+      "placeholder": "e.g. 2,500 €"
+    },
+    "term": {
+      "label": "Repayment Term",
+      "year": "year",
+      "years": "years"
+    }
+  },
+  "step2": {
+    "title": "Additional Information",
+    "subtitle": "Help us calculate your expenses accurately",
+    "contact": {
+      "title": "Your Details",
+      "description": "We'll send you a more detailed analysis and recommendations to help you make the right decision.",
+      "name": "Name",
+      "email": "Email",
+      "namePlaceholder": "Your name",
+      "emailPlaceholder": "example@email.com",
+      "emailError": "Please enter a valid email address",
+      "privacyNote": "Your data is protected and will not be shared with third parties"
+    },
+    "debt": {
+      "title": "Monthly Active Debt Payments",
+      "label": "Monthly debt payments"
+    },
+    "property": {
+      "title": "Property Value",
+      "currentValue": "Current value",
+      "change": "Change",
+      "confirm": "Confirm"
+    },
+    "monthlyExpenses": {
+      "title": "Monthly Expenses",
+      "payment": "Monthly payment",
+      "otherDebts": "Other Debts",
+      "interestRate": "Interest Rate",
+      "term": "Term"
+    },
+    "upfrontCosts": {
+      "title": "Upfront Costs",
+      "downPayment": "Down Payment (10%)",
+      "notaryFees": "Notary Fees (4%)",
+      "insurance": "Insurance",
+      "municipalityFee": "Municipality Fee"
+    },
+    "latePayment": {
+      "title": "Late Payment Consequences",
+      "description": "See how much late payments can cost you",
+      "monthsLabel": "Months late",
+      "paymentMultiplied": "Monthly payment x {count}",
+      "penalty": "Penalty interest",
+      "totalDue": "Total due",
+      "criticalWarning": "CRITICAL WARNING!",
+      "criticalText": "After 6 months of non-payment, the bank has the right to start foreclosure proceedings! This may result in property loss and additional legal costs.",
+      "generalWarning": "Multiple late payments may lead to full balance demand and legal proceedings.",
+      "creditBureauWarning": "Delays over 3 months are reported to the Credit Bureau."
+    },
+    "submitButton": "View Results"
+  },
+  "step3": {
+    "title": "Analysis and Recommendation",
+    "titlePersonalized": "{name}, here's your analysis",
+    "subtitle": "Here's what we found about your situation",
+    "loanAmount": "Loan Amount",
+    "incomePercentage": "Percentage of Income",
+    "recommendation": {
+      "title": "Our Recommendation",
+      "adviceTitle": "Our Advice",
+      "paymentPrefix": "The monthly payment will be",
+      "paymentMiddle": "of your",
+      "paymentSuffix": "income",
+      "includesDebts": "(including {debt} in active debts)",
+      "excellent": {
+        "message": "Excellent! This loan is well within your means.",
+        "advice1": "The monthly payment is under 30% of your income - an ideal ratio",
+        "advice2": "You'll have enough funds for savings and unexpected expenses",
+        "advice3": "The bank will most likely approve this loan",
+        "advice4": "You could consider a shorter term to reduce interest costs"
+      },
+      "good": {
+        "message": "Good! This loan is a reasonable choice for you.",
+        "advice1": "The monthly payment is 30-40% of your income - an acceptable ratio",
+        "advice2": "You'll be able to comfortably make your payments",
+        "advice3": "We recommend having an emergency fund for unexpected situations",
+        "advice4": "Be careful with additional loans during this period"
+      },
+      "risky": {
+        "message": "Warning! This loan may be challenging.",
+        "advice1": "The monthly payment is 40-50% of your income - this is risky",
+        "advice2": "You'll have limited funds for other expenses",
+        "advice3": "Consider extending the term or reducing the amount",
+        "advice4": "Are you sure there won't be changes in your income?",
+        "advice5": "The bank may require additional collateral"
+      },
+      "notRecommended": {
+        "message": "Not Recommended! This loan is too risky.",
+        "advice1": "The monthly payment is over 50% of your income - this is very high",
+        "advice2": "High risk of non-payment and financial problems",
+        "advice3": "The bank will most likely reject the application",
+        "advice4": "Consider reducing the amount or extending the term",
+        "advice5": "Or try to increase your income before applying"
+      }
+    }
+  },
+  "loanType": {
+    "label": "Loan Type",
+    "mortgage": "Mortgage",
+    "consumer": "Consumer Loan"
+  },
+  "progress": {
+    "step1": "Basic Information",
+    "step2": "Details",
+    "step3": "Results"
+  },
+  "loanPreview": {
+    "monthlyPayment": "Monthly Payment",
+    "affordable": "Within affordability",
+    "notAffordable": "Above recommended",
+    "incomePercentage": "% of income",
+    "totalPayment": "Total Payment"
+  },
+  "trust": {
+    "dataProtected": "Your data is protected",
+    "accurateCalculations": "Accurate calculations",
+    "fastResult": "Fast results",
+    "freeConsultation": "Free consultation",
+    "fastResponse": "Fast response"
+  }
+}

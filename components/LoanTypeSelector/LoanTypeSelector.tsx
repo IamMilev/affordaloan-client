@@ -1,14 +1,8 @@
-import { Home, CreditCard } from "lucide-react";
-import type { LoanTypeValue } from "@/types/loan";
+"use client";
 
-interface LoanType {
-  id: LoanTypeValue;
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-}
+import { Home, CreditCard } from "lucide-react";
+import { useTranslations } from "next-intl";
+import type { LoanTypeValue } from "@/types/loan";
 
 interface LoanTypeSelectorProps {
   selectedType: LoanTypeValue | null;
@@ -19,19 +13,19 @@ const LoanTypeSelector: React.FC<LoanTypeSelectorProps> = ({
   selectedType,
   onTypeSelect,
 }) => {
-  const loanTypes: LoanType[] = [
+  const t = useTranslations("loanType");
+
+  const loanTypes = [
     {
-      id: "mortgage",
-      title: "Ипотечен кредит",
-      subtitle: "За покупка на жилище",
+      id: "mortgage" as LoanTypeValue,
+      title: t("mortgage"),
       icon: <Home className="w-8 h-8" />,
       color: "text-blue-600",
       bgColor: "bg-blue-50 border-blue-200 hover:bg-blue-100",
     },
     {
-      id: "consumer",
-      title: "Потребителски кредит",
-      subtitle: "За лични нужди",
+      id: "consumer" as LoanTypeValue,
+      title: t("consumer"),
       icon: <CreditCard className="w-8 h-8" />,
       color: "text-green-600",
       bgColor: "bg-green-50 border-green-200 hover:bg-green-100",
@@ -44,7 +38,7 @@ const LoanTypeSelector: React.FC<LoanTypeSelectorProps> = ({
         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
           1
         </span>
-        Избери вид кредит
+        {t("label")}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {loanTypes.map((type) => (
@@ -59,19 +53,18 @@ const LoanTypeSelector: React.FC<LoanTypeSelectorProps> = ({
             }`}
           >
             <div
-              className={`${selectedType === type.id ? type.color : "text-gray-600"}  mr-3`}
+              className={`${selectedType === type.id ? type.color : "text-gray-600"} mr-3`}
             >
               {type.icon}
             </div>
             <div>
               <h3
-                className={` font-bold mb-1 ${
+                className={`font-bold mb-1 ${
                   selectedType === type.id ? type.color : "text-gray-800"
                 }`}
               >
                 {type.title}
               </h3>
-              <p className="text-gray-600 text-sm">{type.subtitle}</p>
             </div>
           </button>
         ))}

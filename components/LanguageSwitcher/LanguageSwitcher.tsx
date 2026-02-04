@@ -9,16 +9,40 @@ const languageNames: Record<string, string> = {
   en: "EN",
 };
 
+type Locale = (typeof locales)[number];
+
 const LanguageSwitcher: React.FC = () => {
-  const locale = useLocale();
+  const defaultLocale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const switchLocale = (newLocale: string) => {
-    // Replace the current locale in the path with the new one
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-    // Preserve search params (including step)
+  const getCurrentLocale = (): Locale => {
+    const pathSegments = pathname.split("/").filter(Boolean);
+    const possibleLocale = pathSegments[0];
+
+    if (locales.includes(possibleLocale as Locale)) {
+      return possibleLocale as Locale;
+    }
+
+    return defaultLocale as Locale;
+  };
+
+  const currentLocale = getCurrentLocale();
+
+  const switchLocale = (newLocale: Locale) => {
+    const pathSegments = pathname.split("/").filter(Boolean);
+    let newPath = pathname;
+
+    if (
+      pathSegments.length > 0 &&
+      locales.includes(pathSegments[0] as Locale)
+    ) {
+      newPath = pathname.replace(`/${pathSegments[0]}`, `/${newLocale}`);
+    } else {
+      newPath = `/${newLocale}${pathname === "/" ? "" : pathname}`;
+    }
+
     const params = searchParams.toString();
     router.push(params ? `${newPath}?${params}` : newPath);
   };
@@ -31,7 +55,7 @@ const LanguageSwitcher: React.FC = () => {
           type="button"
           onClick={() => switchLocale(loc)}
           className={`px-2 py-0.5 rounded-md text-sm font-medium transition-all duration-200 ${
-            locale === loc
+            currentLocale === loc
               ? "bg-blue-600 text-white shadow-md"
               : "text-gray-600 hover:bg-gray-100"
           }`}

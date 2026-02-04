@@ -56,9 +56,6 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
           <div className="text-2xl font-bold text-blue-600">
             {formatTerm(sliderValue)}
           </div>
-          <div className="mt-4 text-center text-sm text-gray-600">
-            {sliderValue} {tCommon("months")}
-          </div>
         </div>
 
         <div className="relative">

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { locales } from "@/i18n/config";
 import LanguageSwitcher from "@/components/LanguageSwitcher/LanguageSwitcher";
 import "../globals.css";
+import { getTranslations } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,11 +18,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Affordaloan — Loan Affordability Calculator",
-  description:
-    "Calculate how much you can borrow based on your income, existing debts, and current bank interest rates.",
-};
+export async function generateMetadata({
+  params,
+}: Pick<LocaleLayoutProps, "params">): Promise<Metadata> {
+  const { locale } = await params;
+
+  const t = await getTranslations({
+    locale,
+    namespace: "meta",
+  });
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
 interface LocaleLayoutProps {
   children: React.ReactNode;

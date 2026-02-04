@@ -145,5 +145,9 @@
     "fastResult": "Fast results",
     "freeConsultation": "Free consultation",
     "fastResponse": "Fast response"
+  },
+  "meta": {
+    "title": "Affordaloan — Loan Affordability Calculator",
+    "description": "Calculate how much you can borrow based on your income, existing debts, and current bank interest rates."
   }
 }

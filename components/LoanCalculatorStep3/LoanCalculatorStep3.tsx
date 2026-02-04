@@ -182,7 +182,7 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
               <div
                 className={`rounded-xl p-6 border-2 bg-gradient-to-br ${getRecommendationBg()}`}
               >
-                <div className="flex items-start mb-4">
+                <div className="flex flex-col md:flex-row items-start mb-4">
                   <div className="mr-4 flex-shrink-0">
                     {getRecommendationIcon()}
                   </div>
@@ -224,7 +224,7 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                           { length: analysis.adviceCount },
                           (_, i) => (
                             <li
-                              key={analysis.recommendation}
+                              key={`${analysis.dti}${i}`}
                               className="flex items-start"
                             >
                               <span className="text-blue-600 mr-2 flex-shrink-0">

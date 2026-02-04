@@ -40,16 +40,16 @@ const LoanTypeSelector: React.FC<LoanTypeSelectorProps> = ({
         </span>
         {t("label")}
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
         {loanTypes.map((type) => (
           <button
             type="button"
             key={type.id}
             onClick={() => onTypeSelect(type.id)}
-            className={`flex p-6 rounded-xl transition-all duration-200 text-left ${
+            className={`flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 text-left ${
               selectedType === type.id
                 ? `${type.bgColor} border-current ring-2 ring-blue-200 shadow-lg`
-                : "bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                : "bg-gray-50 border-gray-200 ring-2 ring-gray-200 hover:bg-gray-100 hover:border-gray-300"
             }`}
           >
             <div
@@ -57,15 +57,13 @@ const LoanTypeSelector: React.FC<LoanTypeSelectorProps> = ({
             >
               {type.icon}
             </div>
-            <div>
-              <h3
-                className={`font-bold mb-1 ${
-                  selectedType === type.id ? type.color : "text-gray-800"
-                }`}
-              >
-                {type.title}
-              </h3>
-            </div>
+            <h3
+              className={`text-lg font-bold ${
+                selectedType === type.id ? type.color : "text-gray-800"
+              }`}
+            >
+              {type.title}
+            </h3>
           </button>
         ))}
       </div>

@@ -41,20 +41,29 @@
     },
     "debt": {
       "title": "Monthly Active Debt Payments",
-      "label": "Monthly debt payments"
+      "label": "Monthly debt payments",
+      "description": "Other loans, credit cards, leasing payments",
+      "change": "Change",
+      "confirm": "Confirm"
     },
     "property": {
       "title": "Property Value",
       "currentValue": "Current value",
       "change": "Change",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "description": "Estimated market value for notary fees calculation"
     },
     "monthlyExpenses": {
       "title": "Monthly Expenses",
       "payment": "Monthly payment",
       "otherDebts": "Other Debts",
       "interestRate": "Interest Rate",
-      "term": "Term"
+      "term": "Term",
+      "rateSource": "Average rate from 8 major Bulgarian banks",
+      "customRate": "Custom rate",
+      "editRate": "Edit",
+      "resetRate": "Reset to average",
+      "rateValidation": "Rate must be between 0.1% and 30%"
     },
     "upfrontCosts": {
       "title": "Upfront Costs",
@@ -125,7 +134,7 @@
   "loanType": {
     "label": "Loan Type",
     "mortgage": "Mortgage",
-    "consumer": "Consumer Loan"
+    "consumer": "Consumer"
   },
   "progress": {
     "step1": "Basic Information",

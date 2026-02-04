@@ -48,7 +48,14 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
       (loanData.loanType === "mortgage" ? loanData.loanAmount * 1.1 : 0),
   );
   const [isEditingProperty, setIsEditingProperty] = useState(false);
+  const [isEditingDebt, setIsEditingDebt] = useState(false);
   const [latePaymentMonths, setLatePaymentMonths] = useState(1);
+
+  // Custom rate state
+  const [customRate, setCustomRate] = useState<number | null>(null);
+  const [isEditingRate, setIsEditingRate] = useState(false);
+  const [rateInputValue, setRateInputValue] = useState("");
+  const [rateError, setRateError] = useState(false);
 
   // User contact state
   const [contactData, setContactData] = useState<UserContactData>({
@@ -59,10 +66,16 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [emailTouched, setEmailTouched] = useState(false);
 
-  // Calculate interest rate based on loan type
-  const interestRate = useMemo(() => {
+  // Calculate default interest rate based on loan type
+  const defaultRate = useMemo(() => {
     return loanData.loanType === "mortgage" ? mortgage : consumer;
   }, [loanData.loanType, mortgage, consumer]);
+
+  // Calculate interest rate (use custom rate if set, otherwise default)
+  const interestRate = useMemo(() => {
+    if (customRate !== null) return customRate;
+    return defaultRate;
+  }, [customRate, defaultRate]);
 
   // Calculate monthly payment
   const monthlyPayment = useMemo(() => {
@@ -83,8 +96,8 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
 
     const downPayment = loanData.loanAmount * 0.1;
     const notaryFees = propertyValue * 0.04;
-    const insurance = 500;
-    const municipalityFee = 150;
+    const insurance = 250;
+    const municipalityFee = 75;
 
     return {
       downPayment,
@@ -164,6 +177,30 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
     if (months >= 6) return "from-blue-100 to-blue-200 border-blue-400";
     if (months >= 3) return "from-blue-50 to-blue-100 border-blue-300";
     return "from-blue-50 to-blue-100 border-blue-200";
+  };
+
+  // Rate editing handlers
+  const handleEditRate = () => {
+    setRateInputValue(interestRate.toString());
+    setRateError(false);
+    setIsEditingRate(true);
+  };
+
+  const handleConfirmRate = () => {
+    const value = parseFloat(rateInputValue);
+    if (Number.isNaN(value) || value < 0.1 || value > 30) {
+      setRateError(true);
+      return;
+    }
+    setCustomRate(value);
+    setRateError(false);
+    setIsEditingRate(false);
+  };
+
+  const handleResetRate = () => {
+    setCustomRate(null);
+    setRateError(false);
+    setIsEditingRate(false);
   };
 
   const currency = tCommon("currency");
@@ -273,93 +310,227 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
               </div>
             </div>
 
-            {/* Active Debt Section */}
+            {/* Loan Details Section */}
             <div className="mb-8">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
                   2
                 </span>
                 {t("debt.title")}
+                {loanData.loanType === "mortgage" && `, ${t("property.title")}`}{" "}
+                & {t("monthlyExpenses.interestRate")}
               </h2>
 
-              <div className="mb-4">
-                <div className="space-y-4">
-                  <CustomRangeSlider
-                    value={activeDebt}
-                    onChange={setActiveDebt}
-                    min={0}
-                    max={2000}
-                    step={50}
-                    formatValue={(val) => `${formatNumber(val)} ${currency}`}
-                    label={t("debt.label")}
-                    valueTextSize="3xl"
-                    showDebugInfo={false}
-                    showSteps={false}
-                    showQuickSelect={false}
-                  />
+              <div className="flex flex-wrap gap-4">
+                {/* Active Debt Block */}
+                <div className="flex-1 min-w-[200px] bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <CreditCard className="w-4 h-4 text-blue-600 mr-2" />
+                    <h3 className="font-semibold text-gray-900 text-sm">
+                      {t("debt.label")}
+                    </h3>
+                  </div>
+                  {!isEditingDebt ? (
+                    <div>
+                      <p className="text-xl font-bold text-blue-600 mb-1">
+                        {formatCurrency(activeDebt)} {currency}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        {t("debt.description")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingDebt(true)}
+                        className="flex items-center justify-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-blue-300 text-blue-700 font-medium text-sm hover:bg-blue-50 transition-all duration-200 w-full"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        <span>{t("debt.change")}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <CustomRangeSlider
+                        value={activeDebt}
+                        onChange={setActiveDebt}
+                        min={0}
+                        max={2000}
+                        step={50}
+                        formatValue={(val) =>
+                          `${formatNumber(val)} ${currency}`
+                        }
+                        label=""
+                        valueTextSize="xl"
+                        showDebugInfo={false}
+                        showSteps={false}
+                        showQuickSelect={false}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingDebt(false)}
+                        className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-all duration-200"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>{t("debt.confirm")}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* Property Value Block (only for mortgage) */}
+                {loanData.loanType === "mortgage" && (
+                  <div className="flex-1 min-w-[200px] bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+                    <div className="flex items-center mb-2">
+                      <Home className="w-4 h-4 text-blue-600 mr-2" />
+                      <h3 className="font-semibold text-gray-900 text-sm">
+                        {t("property.title")}
+                      </h3>
+                    </div>
+                    {!isEditingProperty ? (
+                      <div>
+                        <p className="text-xl font-bold text-blue-600 mb-1">
+                          {formatCurrency(propertyValue)} {currency}
+                        </p>
+                        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          {t("property.description")}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingProperty(true)}
+                          className="flex items-center justify-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-blue-300 text-blue-700 font-medium text-sm hover:bg-blue-50 transition-all duration-200 w-full"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>{t("property.change")}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <CustomRangeSlider
+                          value={propertyValue}
+                          onChange={setPropertyValue}
+                          min={50000}
+                          max={1000000}
+                          step={5000}
+                          formatValue={(val) =>
+                            `${formatNumber(val)} ${currency}`
+                          }
+                          label=""
+                          valueTextSize="xl"
+                          showDebugInfo={false}
+                          showSteps={false}
+                          showQuickSelect={false}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingProperty(false)}
+                          className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-all duration-200"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>{t("property.confirm")}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Interest Rate Block */}
+                <div className="flex-1 min-w-[200px] bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <CreditCard className="w-4 h-4 text-blue-600 mr-2" />
+                    <h3 className="font-semibold text-gray-900 text-sm">
+                      {t("monthlyExpenses.interestRate")}
+                    </h3>
+                  </div>
+                  {!isEditingRate ? (
+                    <div>
+                      <p className="text-xl font-bold text-blue-600 mb-1">
+                        {interestRate}%
+                        {customRate !== null && (
+                          <span className="ml-2 text-xs font-normal text-blue-500">
+                            ({t("monthlyExpenses.customRate")})
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        {t("monthlyExpenses.rateSource")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleEditRate}
+                        className="flex items-center justify-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-blue-300 text-blue-700 font-medium text-sm hover:bg-blue-50 transition-all duration-200 w-full"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        <span>{t("monthlyExpenses.editRate")}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.1"
+                            max="30"
+                            value={rateInputValue}
+                            onChange={(e) => {
+                              setRateInputValue(e.target.value);
+                              setRateError(false);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleConfirmRate();
+                              if (e.key === "Escape") setIsEditingRate(false);
+                            }}
+                            className={`w-full px-3 py-2 pr-8 border-2 rounded-lg focus:outline-none text-lg font-semibold ${
+                              rateError
+                                ? "border-red-300 focus:border-red-500 bg-red-50"
+                                : "border-gray-200 focus:border-blue-500"
+                            }`}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                            %
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleConfirmRate}
+                          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          title="Confirm"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {rateError && (
+                        <p className="text-xs text-red-600">
+                          {t("monthlyExpenses.rateValidation")}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500 flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          {t("monthlyExpenses.rateSource")}: {defaultRate}%
+                        </span>
+                        {customRate !== null && (
+                          <button
+                            type="button"
+                            onClick={handleResetRate}
+                            className="text-blue-600 hover:text-blue-800 underline"
+                          >
+                            {t("monthlyExpenses.resetRate")}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Property Value (only for mortgage) */}
-            {loanData.loanType === "mortgage" && (
-              <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
-                    3
-                  </span>
-                  {t("property.title")}
-                </h2>
-
-                {!isEditingProperty ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        {t("property.currentValue")}
-                      </p>
-                      <p className="text-2xl sm:text-3xl font-bold text-blue-600">
-                        {formatCurrency(propertyValue)} {currency}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingProperty(true)}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-white rounded-lg border-2 border-blue-300 text-blue-700 font-semibold hover:bg-blue-50 transition-all duration-200 w-full sm:w-auto"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      <span>{t("property.change")}</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <CustomRangeSlider
-                      value={propertyValue}
-                      onChange={setPropertyValue}
-                      min={50000}
-                      max={1000000}
-                      step={5000}
-                      formatValue={(val) => `${formatNumber(val)} ${currency}`}
-                      label={t("property.title")}
-                      valueTextSize="3xl"
-                      showDebugInfo={false}
-                      showSteps={false}
-                      showQuickSelect={false}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingProperty(false)}
-                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>{t("property.confirm")}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Summary Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div
+              className={`grid grid-cols-1 ${loanData.loanType === "mortgage" ? "md:grid-cols-2" : ""} gap-6 mb-8`}
+            >
               {/* Monthly Payment Card */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
                 <div className="flex items-center mb-3">
@@ -407,14 +578,14 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
 
               {/* Upfront Costs Card (only for mortgage) */}
               {loanData.loanType === "mortgage" && upfrontCosts && (
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
                   <div className="flex items-center mb-3">
-                    <Home className="w-5 h-5 text-green-600 mr-2" />
+                    <Home className="w-5 h-5 text-blue-600 mr-2" />
                     <h3 className="font-bold text-gray-900">
                       {t("upfrontCosts.title")}
                     </h3>
                   </div>
-                  <p className="text-3xl font-bold text-green-600 mb-3">
+                  <p className="text-3xl font-bold text-blue-600 mb-3">
                     {formatCurrency(upfrontCosts.total)} {currency}
                   </p>
                   <div className="space-y-1 text-sm">
@@ -584,7 +755,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
             type="button"
             onClick={handleBack}
             disabled={isSubmitting}
-            className="py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
+            className="py-2 px-4 rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>{tCommon("back")}</span>
@@ -593,7 +764,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
             type="button"
             onClick={handleContinue}
             disabled={!canContinue || isSubmitting}
-            className={`w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-all duration-200 ${
+            className={`w-full py-2 px-4 rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-all duration-200 ${
               canContinue && !isSubmitting
                 ? "bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import ProgressIndicator from "@/components/ProgressIndicator/ProgressIndicator";
 import type { LoanData, InterestRates } from "@/types/loan";
 import LoanPreviewCard from "../LoanPreviewCard/LoanPreviewCard";
+import TrustBadge from "../TrustBadge/TrustBadge";
 
 interface LoanCalculatorStep3Props {
   loanData: LoanData;
@@ -22,7 +23,6 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
 }) => {
   const t = useTranslations("step3");
   const tCommon = useTranslations("common");
-  const tTrust = useTranslations("trust");
   const { mortgage, consumer } = interestRates;
 
   // Calculate interest rate and monthly payment
@@ -137,11 +137,11 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
             {/* Title */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {userName ? t("titlePersonalized", { name: userName }) : t("title")}
+                {userName
+                  ? t("titlePersonalized", { name: userName })
+                  : t("title")}
               </h1>
-              <p className="text-gray-600">
-                {t("subtitle")}
-              </p>
+              <p className="text-gray-600">{t("subtitle")}</p>
             </div>
 
             <LoanPreviewCard
@@ -161,7 +161,9 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                 </p>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border-2 border-blue-200">
-                <p className="text-sm text-gray-600 mb-1">{t("incomePercentage")}</p>
+                <p className="text-sm text-gray-600 mb-1">
+                  {t("incomePercentage")}
+                </p>
                 <p className="text-2xl font-bold text-blue-600">
                   {analysis.dti.toFixed(1)}%
                 </p>
@@ -193,15 +195,22 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                     <p className="text-gray-700 mb-4">
                       {t("recommendation.paymentPrefix")}{" "}
                       <span className="font-bold">
-                        {formatCurrency(analysis.totalMonthlyDebt)} {tCommon("currency")}
+                        {formatCurrency(analysis.totalMonthlyDebt)}{" "}
+                        {tCommon("currency")}
                       </span>{" "}
                       {t("recommendation.paymentMiddle")}{" "}
                       <span className="font-bold">
-                        {formatCurrency(analysis.monthlyIncome)} {tCommon("currency")}
+                        {formatCurrency(analysis.monthlyIncome)}{" "}
+                        {tCommon("currency")}
                       </span>{" "}
                       {t("recommendation.paymentSuffix")}
                       {loanData.activeDebt && (
-                        <> {t("recommendation.includesDebts", { debt: `${formatCurrency(loanData.activeDebt || 0)} ${tCommon("currency")}` })}</>
+                        <>
+                          {" "}
+                          {t("recommendation.includesDebts", {
+                            debt: `${formatCurrency(loanData.activeDebt || 0)} ${tCommon("currency")}`,
+                          })}
+                        </>
                       )}
                       .
                     </p>
@@ -211,16 +220,24 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                         {t("recommendation.adviceTitle")}:
                       </h4>
                       <ul className="space-y-2">
-                        {Array.from({ length: analysis.adviceCount }, (_, i) => (
-                          <li key={i} className="flex items-start">
-                            <span className="text-blue-600 mr-2 flex-shrink-0">
-                              •
-                            </span>
-                            <span className="text-sm text-gray-700">
-                              {t(`recommendation.${analysis.recommendation}.advice${i + 1}`)}
-                            </span>
-                          </li>
-                        ))}
+                        {Array.from(
+                          { length: analysis.adviceCount },
+                          (_, i) => (
+                            <li
+                              key={analysis.recommendation}
+                              className="flex items-start"
+                            >
+                              <span className="text-blue-600 mr-2 flex-shrink-0">
+                                •
+                              </span>
+                              <span className="text-sm text-gray-700">
+                                {t(
+                                  `recommendation.${analysis.recommendation}.advice${i + 1}`,
+                                )}
+                              </span>
+                            </li>
+                          ),
+                        )}
                       </ul>
                     </div>
                   </div>
@@ -230,11 +247,7 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
           </div>
 
           {/* Trust indicators */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              {tTrust("dataProtected")} | {tTrust("freeConsultation")} | {tTrust("fastResponse")}
-            </p>
-          </div>
+          <TrustBadge />
         </div>
       </div>
 

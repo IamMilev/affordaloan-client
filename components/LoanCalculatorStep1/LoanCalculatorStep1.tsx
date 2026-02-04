@@ -11,6 +11,7 @@ import LoanAmountSlider from "@/components/LoanAmountSlider/LoanAmountSlider";
 import TermSelector from "@/components/TermSelector/TermSelector";
 import ProgressIndicator from "@/components/ProgressIndicator/ProgressIndicator";
 import type { LoanData, LoanTypeValue, LoanTypeDefaults } from "@/types/loan";
+import TrustBadge from "../TrustBadge/TrustBadge";
 
 // Default values per loan type
 const LOAN_TYPE_DEFAULTS: Record<LoanTypeValue, LoanTypeDefaults> = {
@@ -37,7 +38,6 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
 }) => {
   const t = useTranslations("step1");
   const tCommon = useTranslations("common");
-  const tTrust = useTranslations("trust");
 
   const [loanData, setLoanData] = useState<LoanData>({
     loanType: "mortgage",
@@ -128,12 +128,7 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
           </div>
 
           {/* Trust indicators */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              {tTrust("dataProtected")} | {tTrust("accurateCalculations")} |{" "}
-              {tTrust("fastResult")}
-            </p>
-          </div>
+          <TrustBadge />
         </div>
       </div>
 

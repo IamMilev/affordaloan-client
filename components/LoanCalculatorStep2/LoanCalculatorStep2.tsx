@@ -18,6 +18,7 @@ import { useTranslations } from "next-intl";
 import ProgressIndicator from "@/components/ProgressIndicator/ProgressIndicator";
 import CustomRangeSlider from "@/components/Slider/Slider";
 import type { InterestRates, LoanData, UserContactData } from "@/types/loan";
+import TrustBadge from "../TrustBadge/TrustBadge";
 
 interface LoanCalculatorStep2Props {
   loanData: LoanData;
@@ -39,7 +40,6 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
 }) => {
   const t = useTranslations("step2");
   const tCommon = useTranslations("common");
-  const tTrust = useTranslations("trust");
 
   const [activeDebt, setActiveDebt] = useState(loanData.activeDebt || 0);
   const { mortgage, consumer } = interestRates;
@@ -573,12 +573,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
           </div>
 
           {/* Trust indicators */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              {tTrust("dataProtected")} | {tTrust("accurateCalculations")} |{" "}
-              {tTrust("fastResult")}
-            </p>
-          </div>
+          <TrustBadge />
         </div>
       </div>
 

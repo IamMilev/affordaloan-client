@@ -18,14 +18,31 @@ export default function LoanCalculatorFlow({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Get step from URL, default to 1
-  const urlStep = parseInt(searchParams.get("step") || "1", 10);
-  const [step, setStepState] = useState(urlStep >= 1 && urlStep <= 3 ? urlStep : 1);
+  // Always start at step 1 - URL step is only used for back/forward navigation
+  const [step, setStepState] = useState(1);
   const [loanData, setLoanData] = useState<LoanData | null>(null);
   const [userContact, setUserContact] = useState<UserContactData | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Update step when URL changes (browser back/forward)
+  // On mount, redirect to step 1 if URL has a higher step (data is lost on refresh)
   useEffect(() => {
+    if (!isInitialized) {
+      const urlStep = parseInt(searchParams.get("step") || "1", 10);
+      if (urlStep > 1) {
+        // Redirect to step 1 since we don't have the data
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("step");
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl);
+      }
+      setIsInitialized(true);
+    }
+  }, [isInitialized, searchParams, pathname, router]);
+
+  // Update step when URL changes (browser back/forward) - only after initialization
+  useEffect(() => {
+    if (!isInitialized) return;
+
     const newStep = parseInt(searchParams.get("step") || "1", 10);
     if (newStep >= 1 && newStep <= 3 && newStep !== step) {
       // Only allow going back, or forward if we have the required data
@@ -34,11 +51,16 @@ export default function LoanCalculatorFlow({
       } else if (newStep > step) {
         // If trying to go forward without data, redirect back to current step
         const params = new URLSearchParams(searchParams.toString());
-        params.set("step", step.toString());
-        router.replace(`${pathname}?${params.toString()}`);
+        if (step === 1) {
+          params.delete("step");
+        } else {
+          params.set("step", step.toString());
+        }
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl);
       }
     }
-  }, [searchParams, step, loanData, userContact, pathname, router]);
+  }, [isInitialized, searchParams, step, loanData, userContact, pathname, router]);
 
   // Custom setStep that updates URL
   const setStep = useCallback((newStep: number) => {

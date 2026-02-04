@@ -1,7 +1,7 @@
 // app/[locale]/page.tsx (SERVER)
 import type { LoanStatsResponse } from "@/types/api";
 import LoanCalculatorFlow from "@/components/LoanCalculatorFlow/LoanCalculatorFlow";
-import { InterestRates } from "@/types/loan";
+import type { InterestRates } from "@/types/loan";
 
 export default async function HomePage() {
   const backendUrl =
@@ -18,10 +18,18 @@ export default async function HomePage() {
 
   const interestRates = data.reduce<InterestRates>(
     (acc, { loan_type, average_apr }) => {
-      return {
-        ...acc,
-        [loan_type]: average_apr,
+      const result = {
+        mortgage: acc.mortgage,
+        consumer: acc.consumer,
       };
+
+      if (loan_type === "mortgage") {
+        result.mortgage = average_apr;
+      } else if (loan_type === "consumer") {
+        result.consumer = average_apr;
+      }
+
+      return result;
     },
     {
       mortgage: 0,

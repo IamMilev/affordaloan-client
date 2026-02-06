@@ -2,8 +2,14 @@
 import type { LoanStatsResponse } from "@/types/api";
 import LoanCalculatorFlow from "@/components/LoanCalculatorFlow/LoanCalculatorFlow";
 import type { InterestRates } from "@/types/loan";
+import type { Locale } from "@/i18n/config";
 
-export default async function HomePage() {
+interface HomePageProps {
+  params: Promise<{ locale: Locale }>;
+}
+
+export default async function HomePage({ params }: HomePageProps) {
+  const { locale } = await params;
   const backendUrl =
     process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
   const response = await fetch(`${backendUrl}/api/stats`, {
@@ -39,7 +45,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <LoanCalculatorFlow interestRates={interestRates} />
+      <LoanCalculatorFlow interestRates={interestRates} locale={locale} />
     </div>
   );
 }

@@ -4,15 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import LoanCalculatorStep1 from "@/components/LoanCalculatorStep1/LoanCalculatorStep1";
 import type { LoanData, InterestRates, UserContactData } from "@/types/loan";
+import type { Locale } from "@/i18n/config";
 import LoanCalculatorStep2 from "../LoanCalculatorStep2/LoanCalculatorStep2";
 import LoanCalculatorStep3 from "../LoanCalculatorStep3/LoanCalculatorStep3";
 
 interface LoanCalculatorFlowProps {
   interestRates: InterestRates;
+  locale: Locale;
 }
 
 export default function LoanCalculatorFlow({
   interestRates,
+  locale,
 }: LoanCalculatorFlowProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -103,6 +106,7 @@ export default function LoanCalculatorFlow({
             ? data.propertyValue - data.loanAmount
             : undefined,
         },
+        locale,
       }),
     });
 

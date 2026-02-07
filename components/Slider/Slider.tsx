@@ -392,7 +392,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
-            className={`w-full ps-2 pl-10 pr-4 py-3 ${valueTextSize ? "text-" + valueTextSize : "text-2xl"} font-bold text-blue-600 bg-transparent border-2 border-transparent rounded-lg hover:border-blue-200 focus:border-blue-400 focus:outline-none transition-all duration-200`}
+            className={`w-full ps-2 pl-10 pr-4 py-3 ${valueTextSize ? `text-${valueTextSize}` : "text-2xl"} font-bold text-blue-600 bg-transparent border-2 border-transparent rounded-lg hover:border-blue-200 focus:border-blue-400 focus:outline-none transition-all duration-200`}
             placeholder="Enter amount"
           />
         </div>
@@ -484,16 +484,16 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
 
           {/* Thumb */}
           <div
-            className="absolute w-8 h-8 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110"
+            className="absolute w-10 h-10 md:w-8 md:h-8 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110 active:scale-95 z-20"
             style={{
-              left: `calc(${currentPercentage}% - 12px)`,
+              left: `${currentPercentage}%`,
               top: "50%",
-              transform: "translateY(-50%)",
+              transform: "translate(-50%, -50%)",
             }}
           />
         </div>
 
-        {/* Hidden input with optimized range */}
+        {/* Hidden input with optimized range - expanded hit area for mobile */}
         <input
           type="range"
           min={0}
@@ -501,7 +501,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           step={1}
           value={currentPercentage * 10}
           onChange={handleChange}
-          className="absolute inset-0 w-full h-2 opacity-0 cursor-pointer"
+          className="absolute left-0 -top-7 w-full h-16 opacity-0 cursor-pointer z-30"
         />
         {/* Min/Max labels */}
         <div className="flex justify-between text-sm text-gray-500 mt-4">

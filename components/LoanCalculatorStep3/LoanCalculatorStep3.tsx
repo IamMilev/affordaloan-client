@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { ArrowLeft, CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, XCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import ProgressIndicator from "@/components/ProgressIndicator/ProgressIndicator";
 import type { LoanData, InterestRates } from "@/types/loan";
+import { calculateLoan } from "@/utils/loanCalculations";
 import LoanPreviewCard from "../LoanPreviewCard/LoanPreviewCard";
 import TrustBadge from "../TrustBadge/TrustBadge";
 
@@ -26,28 +27,29 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
   const { mortgage, consumer } = interestRates;
 
   // Calculate interest rate and monthly payment
-  const interestRate = useMemo(() => {
-    return loanData.loanType === "mortgage" ? mortgage : consumer;
-  }, [loanData.loanType, mortgage, consumer]);
+  // Calculate loan details using shared utility
+  const calculationResult = useMemo(() => {
+    const rate = loanData.loanType === "mortgage" ? mortgage : consumer;
+    const incomeNumber = parseFloat(loanData.income.replace(/,/g, "")) || 0;
 
-  const monthlyPayment = useMemo(() => {
-    const principal = loanData.loanAmount;
-    const monthlyRate = interestRate / 100 / 12;
-    const numPayments = loanData.term;
+    return calculateLoan({
+      loanAmount: loanData.loanAmount,
+      termMonths: loanData.term,
+      interestRate: rate,
+      income: incomeNumber,
+      existingDebt: loanData.activeDebt || 0,
+      loanType: loanData.loanType || "mortgage",
+      downPayment: 0, // Assuming 0 for now as Step 1 doesn't seem to capture it explicitly or it's not in LoanData types yet?
+      // Checking LoanData interface... LoanData seems to have minimal fields.
+      // The backend supports DownPayment. Frontend Step1 doesn't seem to have a field for it in the form data state shown in my previous `view_file`.
+      // So 0 is safe for consistency with current frontend state.
+    });
+  }, [loanData, mortgage, consumer]);
 
-    return (
-      (principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments))) /
-      (Math.pow(1 + monthlyRate, numPayments) - 1)
-    );
-  }, [loanData.loanAmount, loanData.term, interestRate]);
+  const { dti, totalMonthlyDebt } = calculationResult;
 
-  // Calculate debt-to-income ratio
+  // Determine recommendation based on DTI ratio (mirrors utility isAffordable but adds granular advice levels)
   const analysis = useMemo(() => {
-    const monthlyIncome = parseFloat(loanData.income.replace(/,/g, ""));
-    const totalMonthlyDebt = monthlyPayment + (loanData.activeDebt || 0);
-    const dti = (totalMonthlyDebt / monthlyIncome) * 100;
-
-    // Determine recommendation based on DTI ratio
     let recommendation: "excellent" | "good" | "risky" | "notRecommended";
     let adviceCount: number;
 
@@ -66,13 +68,10 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
     }
 
     return {
-      dti,
       recommendation,
       adviceCount,
-      totalMonthlyDebt,
-      monthlyIncome,
     };
-  }, [loanData.income, monthlyPayment, loanData.activeDebt]);
+  }, [dti]);
 
   const getRecommendationColor = () => {
     switch (analysis.recommendation) {
@@ -120,7 +119,7 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
     }).format(value);
   };
 
-  const handleBack = () => {
+  const _handleBack = () => {
     setStep(2);
   };
 
@@ -165,7 +164,7 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                   {t("incomePercentage")}
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {analysis.dti.toFixed(1)}%
+                  {dti.toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -195,12 +194,13 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                     <p className="text-gray-700 mb-4">
                       {t("recommendation.paymentPrefix")}{" "}
                       <span className="font-bold">
-                        {formatCurrency(analysis.totalMonthlyDebt)}{" "}
-                        {tCommon("currency")}
+                        {formatCurrency(totalMonthlyDebt)} {tCommon("currency")}
                       </span>{" "}
                       {t("recommendation.paymentMiddle")}{" "}
                       <span className="font-bold">
-                        {formatCurrency(analysis.monthlyIncome)}{" "}
+                        {formatCurrency(
+                          parseFloat(loanData.income.replace(/,/g, "")) || 0,
+                        )}{" "}
                         {tCommon("currency")}
                       </span>{" "}
                       {t("recommendation.paymentSuffix")}
@@ -215,6 +215,19 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                       .
                     </p>
 
+                    {calculationResult.propertyTax > 0 && (
+                      <p className="text-sm text-gray-600 mb-4 bg-blue-50/50 p-2 rounded">
+                        <span className="font-semibold">
+                          {tCommon("note")}:
+                        </span>{" "}
+                        {t("recommendation.propertyTaxNote")}{" "}
+                        <span className="font-bold">
+                          {formatCurrency(calculationResult.propertyTax * 12)}{" "}
+                          {tCommon("currency")}
+                        </span>{" "}
+                        {t("recommendation.perYear")}.
+                      </p>
+                    )}
                     <div className="bg-white rounded-lg p-5">
                       <h4 className="font-bold text-gray-900 mb-3">
                         {t("recommendation.adviceTitle")}:
@@ -224,7 +237,7 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
                           { length: analysis.adviceCount },
                           (_, i) => (
                             <li
-                              key={`${analysis.dti}${i}`}
+                              key={`advice-${analysis.recommendation}-${i}`}
                               className="flex items-start"
                             >
                               <span className="text-blue-600 mr-2 flex-shrink-0">
@@ -248,20 +261,6 @@ const LoanCalculatorStep3: React.FC<LoanCalculatorStep3Props> = ({
 
           {/* Trust indicators */}
           <TrustBadge />
-        </div>
-      </div>
-
-      {/* Sticky footer */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 shadow-lg px-4 py-4">
-        <div className="max-w-2xl mx-auto">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>{tCommon("back")}</span>
-          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { calculateLoan } from "@/utils/loanCalculations";
 import type { LoanTypeValue, InterestRates } from "@/types/loan";
 
 interface LoanPreviewCardProps {
@@ -26,27 +27,32 @@ const LoanPreviewCard: React.FC<LoanPreviewCardProps> = ({
   const tCommon = useTranslations("common");
 
   const { mortgage, consumer } = interestRates;
-  const calculateMonthlyPayment = (): number => {
-    if (!loanAmount || !term) return 0;
 
-    const interestRate = loanType === "mortgage" ? mortgage : consumer;
-    const annualRate = interestRate / 100;
-    const monthlyRate = (1 + annualRate) ** (1 / 12) - 1;
-    const payments = term;
-
-    if (monthlyRate === 0) return loanAmount / payments;
-
-    return (
-      (loanAmount * (monthlyRate * (1 + monthlyRate) ** payments)) /
-      ((1 + monthlyRate) ** payments - 1)
-    );
-  };
-
-  const monthlyPayment = calculateMonthlyPayment();
   const incomeNumber = parseFloat(income.replace(/,/g, "")) || 0;
-  const paymentRatio = incomeNumber > 0 ? monthlyPayment / incomeNumber : 0;
-  const isAffordable = paymentRatio <= 0.4; // 40% debt-to-income ratio
-  const totalPayment = monthlyPayment * term;
+  const currentRate = loanType === "mortgage" ? mortgage : consumer;
+
+  // Use shared calculation utility
+  const result = loanType
+    ? calculateLoan({
+        loanAmount,
+        termMonths: term,
+        interestRate: currentRate,
+        income: incomeNumber,
+        loanType,
+        existingDebt: 0, // Preview card usually doesn't know about debts unless passed, assuming 0 for quick preview or add prop if needed.
+        // Wait, Step 3 uses loanData which has activeDebt.
+        // LoanPreviewCard props don't have activeDebt.
+        // However, the issue described was about defaults.
+        // Let's check props. It only has: loanType, income, loanAmount, term, interestRates.
+        // The DTI shown in the preview card (first block) was 34%, which is (Payment / Income).
+        // The utility calculates DTI based on TOTAL debt. If we pass 0 existing debt, it will be (Payment / Income).
+      })
+    : null;
+
+  const monthlyPayment = result ? result.monthlyPayment : 0;
+  const _paymentRatio = result ? result.dti / 100 : 0; // result.dti is percentage (0-100)
+  const isAffordable = result ? result.isAffordable : true;
+  const totalPayment = result ? result.totalPayment : 0;
 
   if (!loanType || !income || incomeNumber === 0) {
     return null;
@@ -117,7 +123,7 @@ const LoanPreviewCard: React.FC<LoanPreviewCardProps> = ({
       </div>
       <div className="mt-4 flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-sm text-gray-600">
         <span>
-          {t("incomePercentage")}: {Math.round(paymentRatio * 100)}%
+          {t("incomePercentage")}: {result ? result.dti.toFixed(1) : 0}%
         </span>
         <span>
           {t("totalPayment")}: {formatNumber(Math.round(totalPayment))}{" "}

@@ -133,7 +133,7 @@ const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
       </div>
 
       {/* Sticky footer */}
-      <div className="sticky bottom-0 bg-white/25 backdrop-blur-xs border-t border-gray-200 shadow-lg px-4 py-4">
+      <div className="sticky bottom-0 bg-white/25 backdrop-blur-xs border-t border-gray-200 shadow-lg px-4 py-4 z-50">
         <div className="max-w-2xl mx-auto">
           <button
             type="submit"

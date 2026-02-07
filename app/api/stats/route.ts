@@ -2,7 +2,9 @@ import type { ApiError, LoanStatsResponse } from "@/types/api";
 
 export async function GET() {
   try {
-    const response = await fetch(`${process.env.BACKEND_INTERNAL_URL}/api/stats`);
+    const response = await fetch(
+      `${process.env.BACKEND_INTERNAL_URL}/api/stats`,
+    );
 
     if (!response.ok) {
       const error: ApiError = { error: `Go API failed` };

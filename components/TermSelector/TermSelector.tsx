@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import CustomRangeSlider from "@/components/Slider/Slider";
 
 interface TermSelectorProps {
   term: number;
@@ -25,13 +26,12 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
     }
   }, [term]);
 
-  const handleTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
+  const handleSliderChange = (value: number) => {
     setSliderValue(value);
     onTermChange(value);
   };
 
-  const formatTerm = (months: number) => {
+  const _formatTerm = (months: number) => {
     const years = Math.floor(months / 12);
     const remainingMonths = months % 12;
 
@@ -52,54 +52,26 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
       </h2>
 
       <div className="bg-white">
-        <div className="py-3 px-2 flex items-center justify-between mb-2">
-          <div className="text-2xl font-bold text-blue-600">
-            {formatTerm(sliderValue)}
-          </div>
-        </div>
-
         <div className="relative">
-          <input
-            type="range"
+          <CustomRangeSlider
+            value={sliderValue}
+            onChange={handleSliderChange}
             min={minMonths}
             max={maxMonths}
-            value={sliderValue}
-            onChange={handleTermChange}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-            style={{
-              background: `linear-gradient(to right, #51a2ff 0%, #3b82f6 ${((sliderValue - minMonths) / (maxMonths - minMonths)) * 100}%, #e5e7eb ${((sliderValue - minMonths) / (maxMonths - minMonths)) * 100}%, #e5e7eb 100%)`,
+            step={12}
+            formatValue={(val) => {
+              const years = Math.floor(val / 12);
+              const months = val % 12;
+              return months === 0
+                ? `${years} ${t("term.years")}`
+                : `${years} ${t("term.years")} ${months} ${tCommon("month")}`;
             }}
+            showSteps={false}
+            showDebugInfo={false}
+            showQuickSelect={false}
           />
-          <div className="flex justify-between mt-2 text-sm text-gray-500">
-            <span>1 {t("term.year")}</span>
-            <span>30 {t("term.years")}</span>
-          </div>
         </div>
       </div>
-
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background: #fff;
-          cursor: pointer;
-          border: 4px solid #3b82f6;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .slider::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-      `}</style>
     </div>
   );
 };

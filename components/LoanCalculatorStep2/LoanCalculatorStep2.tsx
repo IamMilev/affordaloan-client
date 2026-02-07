@@ -17,6 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import ProgressIndicator from "@/components/ProgressIndicator/ProgressIndicator";
 import CustomRangeSlider from "@/components/Slider/Slider";
+import { calculateLoan } from "@/utils/loanCalculations";
 import type { InterestRates, LoanData, UserContactData } from "@/types/loan";
 import TrustBadge from "../TrustBadge/TrustBadge";
 
@@ -77,18 +78,20 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
     return defaultRate;
   }, [customRate, defaultRate]);
 
-  // Calculate monthly payment
-  const monthlyPayment = useMemo(() => {
-    const principal = loanData.loanAmount;
-    const monthlyRate = interestRate / 100 / 12;
-    const numPayments = loanData.term;
+  // Calculate monthly payment using shared utility
+  const calculationResult = useMemo(() => {
+    return calculateLoan({
+      loanAmount: loanData.loanAmount,
+      termMonths: loanData.term,
+      interestRate: interestRate,
+      income: 0, // Not needed for payment calculation here
+      existingDebt: 0, // Not needed for payment calculation here
+      loanType: loanData.loanType || "mortgage",
+      downPayment: 0,
+    });
+  }, [loanData.loanAmount, loanData.term, interestRate, loanData.loanType]);
 
-    const payment =
-      (principal * (monthlyRate * (1 + monthlyRate) ** numPayments)) /
-      ((1 + monthlyRate) ** numPayments - 1);
-
-    return payment;
-  }, [loanData.loanAmount, loanData.term, interestRate]);
+  const monthlyPayment = calculationResult.monthlyPayment;
 
   // Calculate upfront costs for mortgage
   const upfrontCosts = useMemo(() => {
@@ -748,8 +751,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
         </div>
       </div>
 
-      {/* Sticky footer */}
-      <div className="sticky bottom-0 bg-white/25 backdrop-blur-xs border-t border-gray-200 shadow-lg px-4 py-4">
+      <div className="sticky bottom-0 bg-white/25 backdrop-blur-xs border-t border-gray-200 shadow-lg px-4 py-4 z-50">
         <div className="max-w-2xl mx-auto flex gap-4">
           <button
             type="button"

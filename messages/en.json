@@ -8,7 +8,8 @@
     "months": "months",
     "month": "month",
     "years": "years",
-    "and": "and"
+    "and": "and",
+    "note": "Note"
   },
   "step1": {
     "title": "How much loan can you afford?",
@@ -37,7 +38,7 @@
       "namePlaceholder": "Your name",
       "emailPlaceholder": "example@email.com",
       "emailError": "Please enter a valid email address",
-      "privacyNote": "Your data is protected and will not be shared with third parties"
+      "privacyNote": "Your data is protected and will not be shared with third parties. By pressing 'View Results' you agree with the terms and conditions"
     },
     "debt": {
       "title": "Monthly Active Debt Payments",
@@ -98,6 +99,8 @@
       "paymentPrefix": "The monthly payment will be",
       "paymentMiddle": "of your",
       "paymentSuffix": "income",
+      "propertyTaxNote": "Note: The estimated annual property tax is",
+      "perYear": "per year",
       "includesDebts": "(including {debt} in active debts)",
       "excellent": {
         "message": "Excellent! This loan is well within your means.",

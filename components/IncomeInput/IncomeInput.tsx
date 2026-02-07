@@ -43,7 +43,7 @@ const IncomeInput: React.FC<IncomeInputProps> = ({
         </h2>
         <div className="mb-4">
           <CustomRangeSlider
-            value={income ? parseInt(income.replace(/,/g, ""), 10) : 1000}
+            value={income ? parseInt(income.replace(/[^\d]/g, ""), 10) : 1000}
             onChange={handleSliderChange}
             min={500}
             max={10000}

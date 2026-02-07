@@ -35,7 +35,9 @@ export default function LoanCalculatorFlow({
         // Redirect to step 1 since we don't have the data
         const params = new URLSearchParams(searchParams.toString());
         params.delete("step");
-        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        const newUrl = params.toString()
+          ? `${pathname}?${params.toString()}`
+          : pathname;
         router.replace(newUrl);
       }
       setIsInitialized(true);
@@ -49,7 +51,11 @@ export default function LoanCalculatorFlow({
     const newStep = parseInt(searchParams.get("step") || "1", 10);
     if (newStep >= 1 && newStep <= 3 && newStep !== step) {
       // Only allow going back, or forward if we have the required data
-      if (newStep < step || (newStep === 2 && loanData) || (newStep === 3 && loanData && userContact)) {
+      if (
+        newStep < step ||
+        (newStep === 2 && loanData) ||
+        (newStep === 3 && loanData && userContact)
+      ) {
         setStepState(newStep);
       } else if (newStep > step) {
         // If trying to go forward without data, redirect back to current step
@@ -59,19 +65,32 @@ export default function LoanCalculatorFlow({
         } else {
           params.set("step", step.toString());
         }
-        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        const newUrl = params.toString()
+          ? `${pathname}?${params.toString()}`
+          : pathname;
         router.replace(newUrl);
       }
     }
-  }, [isInitialized, searchParams, step, loanData, userContact, pathname, router]);
+  }, [
+    isInitialized,
+    searchParams,
+    step,
+    loanData,
+    userContact,
+    pathname,
+    router,
+  ]);
 
   // Custom setStep that updates URL
-  const setStep = useCallback((newStep: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("step", newStep.toString());
-    router.push(`${pathname}?${params.toString()}`);
-    setStepState(newStep);
-  }, [searchParams, pathname, router]);
+  const setStep = useCallback(
+    (newStep: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("step", newStep.toString());
+      router.push(`${pathname}?${params.toString()}`);
+      setStepState(newStep);
+    },
+    [searchParams, pathname, router],
+  );
 
   const handleStepComplete = (data: LoanData, newStep: number) => {
     setLoanData(data);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
   ArrowLeft,
@@ -20,6 +20,35 @@ import CustomRangeSlider from "@/components/Slider/Slider";
 import { calculateLoan } from "@/utils/loanCalculations";
 import type { InterestRates, LoanData, UserContactData } from "@/types/loan";
 import TrustBadge from "../TrustBadge/TrustBadge";
+
+const STEP2_STORAGE_KEY = "affordaloan-step2-state";
+
+interface Step2PersistedState {
+  activeDebt: number;
+  propertyValue: number;
+  customRate: number | null;
+  contactName: string;
+  contactEmail: string;
+  latePaymentMonths: number;
+}
+
+function saveStep2State(state: Step2PersistedState) {
+  try {
+    localStorage.setItem(STEP2_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function loadStep2State(): Step2PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STEP2_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Step2PersistedState;
+  } catch {
+    return null;
+  }
+}
 
 interface LoanCalculatorStep2Props {
   loanData: LoanData;
@@ -42,26 +71,35 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
   const t = useTranslations("step2");
   const tCommon = useTranslations("common");
 
-  const [activeDebt, setActiveDebt] = useState(loanData.activeDebt || 0);
+  const saved = useMemo(() => loadStep2State(), []);
+
+  const [activeDebt, setActiveDebt] = useState(
+    saved?.activeDebt ?? loanData.activeDebt ?? 0,
+  );
   const { mortgage, consumer } = interestRates;
   const [propertyValue, setPropertyValue] = useState(
-    loanData.propertyValue ||
+    saved?.propertyValue ??
+      loanData.propertyValue ??
       (loanData.loanType === "mortgage" ? loanData.loanAmount * 1.1 : 0),
   );
   const [isEditingProperty, setIsEditingProperty] = useState(false);
   const [isEditingDebt, setIsEditingDebt] = useState(false);
-  const [latePaymentMonths, setLatePaymentMonths] = useState(1);
+  const [latePaymentMonths, setLatePaymentMonths] = useState(
+    saved?.latePaymentMonths ?? 1,
+  );
 
   // Custom rate state
-  const [customRate, setCustomRate] = useState<number | null>(null);
+  const [customRate, setCustomRate] = useState<number | null>(
+    saved?.customRate ?? null,
+  );
   const [isEditingRate, setIsEditingRate] = useState(false);
   const [rateInputValue, setRateInputValue] = useState("");
   const [rateError, setRateError] = useState(false);
 
   // User contact state
   const [contactData, setContactData] = useState<UserContactData>({
-    name: "",
-    email: "",
+    name: saved?.contactName ?? "",
+    email: saved?.contactEmail ?? "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -126,6 +164,25 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
       isCollectable: latePaymentMonths >= 6,
     };
   }, [monthlyPayment, latePaymentMonths]);
+
+  // Persist step2 state to localStorage
+  useEffect(() => {
+    saveStep2State({
+      activeDebt,
+      propertyValue,
+      customRate,
+      contactName: contactData.name,
+      contactEmail: contactData.email,
+      latePaymentMonths,
+    });
+  }, [
+    activeDebt,
+    propertyValue,
+    customRate,
+    contactData.name,
+    contactData.email,
+    latePaymentMonths,
+  ]);
 
   const isEmailValid = isValidEmail(contactData.email);
   const showEmailError =

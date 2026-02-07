@@ -501,7 +501,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           step={1}
           value={currentPercentage * 10}
           onChange={handleChange}
-          className="absolute left-0 -top-7 w-full h-16 opacity-0 cursor-pointer z-30"
+          className="absolute left-0 -top-7 w-full h-16 opacity-0 cursor-pointer z-30 touch-none"
         />
         {/* Min/Max labels */}
         <div className="flex justify-between text-sm text-gray-500 mt-4">

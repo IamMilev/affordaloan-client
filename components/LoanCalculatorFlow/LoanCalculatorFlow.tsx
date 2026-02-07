@@ -8,6 +8,31 @@ import type { Locale } from "@/i18n/config";
 import LoanCalculatorStep2 from "../LoanCalculatorStep2/LoanCalculatorStep2";
 import LoanCalculatorStep3 from "../LoanCalculatorStep3/LoanCalculatorStep3";
 
+const STORAGE_KEY = "affordaloan-wizard-state";
+
+interface PersistedState {
+  loanData: LoanData | null;
+  userContact: UserContactData | null;
+}
+
+function saveState(state: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function loadState(): PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedState;
+  } catch {
+    return null;
+  }
+}
+
 interface LoanCalculatorFlowProps {
   interestRates: InterestRates;
   locale: Locale;
@@ -21,18 +46,37 @@ export default function LoanCalculatorFlow({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Always start at step 1 - URL step is only used for back/forward navigation
   const [step, setStepState] = useState(1);
   const [loanData, setLoanData] = useState<LoanData | null>(null);
   const [userContact, setUserContact] = useState<UserContactData | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // On mount, redirect to step 1 if URL has a higher step (data is lost on refresh)
+  // On mount, restore state from localStorage
   useEffect(() => {
     if (!isInitialized) {
       const urlStep = parseInt(searchParams.get("step") || "1", 10);
-      if (urlStep > 1) {
-        // Redirect to step 1 since we don't have the data
+      const saved = loadState();
+
+      if (saved?.loanData && urlStep > 1) {
+        // Restore persisted data and allow staying on the URL step
+        setLoanData(saved.loanData);
+        if (saved.userContact) setUserContact(saved.userContact);
+
+        if (urlStep === 2 && saved.loanData) {
+          setStepState(2);
+        } else if (urlStep === 3 && saved.loanData && saved.userContact) {
+          setStepState(3);
+        } else {
+          // Data insufficient for requested step, go to step 1
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("step");
+          const newUrl = params.toString()
+            ? `${pathname}?${params.toString()}`
+            : pathname;
+          router.replace(newUrl);
+        }
+      } else if (urlStep > 1) {
+        // No saved data, redirect to step 1
         const params = new URLSearchParams(searchParams.toString());
         params.delete("step");
         const newUrl = params.toString()
@@ -94,6 +138,7 @@ export default function LoanCalculatorFlow({
 
   const handleStepComplete = (data: LoanData, newStep: number) => {
     setLoanData(data);
+    saveState({ loanData: data, userContact });
     setStep(newStep);
   };
 
@@ -135,13 +180,18 @@ export default function LoanCalculatorFlow({
 
     setLoanData(data);
     setUserContact(contact);
+    saveState({ loanData: data, userContact: contact });
     setStep(3);
   };
 
   return (
     <>
       {step === 1 && (
-        <LoanCalculatorStep1 useIncomeSlider onContinue={handleStepComplete} />
+        <LoanCalculatorStep1
+          useIncomeSlider
+          onContinue={handleStepComplete}
+          initialData={loanData}
+        />
       )}
 
       {step === 2 && loanData && (

@@ -34,14 +34,14 @@ const IncomeInput: React.FC<IncomeInputProps> = ({
 
   if (useSlider) {
     return (
-      <div className="mb-4">
+      <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
           <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-2">
             3
           </span>
           {t("income.label")}
         </h2>
-        <div className="mb-4">
+        <div>
           <CustomRangeSlider
             value={income ? parseInt(income.replace(/[^\d]/g, ""), 10) : 1000}
             onChange={handleSliderChange}

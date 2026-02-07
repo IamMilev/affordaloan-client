@@ -30,20 +30,27 @@ const LOAN_TYPE_DEFAULTS: Record<LoanTypeValue, LoanTypeDefaults> = {
 interface LoanCalculatorStep1Props {
   onContinue?: (data: LoanData, step: number) => void;
   useIncomeSlider?: boolean;
+  initialData?: LoanData | null;
 }
 
 const LoanCalculatorStep1: React.FC<LoanCalculatorStep1Props> = ({
   onContinue,
   useIncomeSlider = false,
+  initialData,
 }) => {
   const t = useTranslations("step1");
   const tCommon = useTranslations("common");
 
-  const [loanData, setLoanData] = useState<LoanData>({
-    loanType: "mortgage",
-    income: LOAN_TYPE_DEFAULTS.mortgage.income,
-    loanAmount: LOAN_TYPE_DEFAULTS.mortgage.loanAmount,
-    term: LOAN_TYPE_DEFAULTS.mortgage.term,
+  const [loanData, setLoanData] = useState<LoanData>(() => {
+    if (initialData) {
+      return initialData;
+    }
+    return {
+      loanType: "mortgage",
+      income: LOAN_TYPE_DEFAULTS.mortgage.income,
+      loanAmount: LOAN_TYPE_DEFAULTS.mortgage.loanAmount,
+      term: LOAN_TYPE_DEFAULTS.mortgage.term,
+    };
   });
 
   const handleLoanTypeSelect = useCallback((type: LoanTypeValue) => {

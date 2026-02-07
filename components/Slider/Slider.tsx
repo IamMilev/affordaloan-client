@@ -3,6 +3,12 @@
 import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import type React from "react";
 
+interface SliderTier {
+  to: number;
+  step: number;
+  width: number; // relative width proportion
+}
+
 // New props interface for external control
 interface CustomRangeSliderProps {
   value?: number;
@@ -10,6 +16,7 @@ interface CustomRangeSliderProps {
   min?: number;
   max?: number;
   step?: number;
+  tiers?: SliderTier[];
   formatValue?: (value: number) => string;
   label?: string;
   showSteps?: boolean;
@@ -17,6 +24,79 @@ interface CustomRangeSliderProps {
   showDebugInfo?: boolean;
   className?: string;
   valueTextSize?: string;
+}
+
+// --- Tier-based helpers ---
+
+function getPercentageWithTiers(
+  value: number,
+  min: number,
+  tiers: SliderTier[],
+): number {
+  const totalWidth = tiers.reduce((sum, t) => sum + t.width, 0);
+  let cumulativePercent = 0;
+  let tierStart = min;
+
+  for (const tier of tiers) {
+    const tierPercent = (tier.width / totalWidth) * 100;
+    if (value <= tier.to) {
+      const range = tier.to - tierStart;
+      const progress = range > 0 ? (value - tierStart) / range : 0;
+      return cumulativePercent + progress * tierPercent;
+    }
+    cumulativePercent += tierPercent;
+    tierStart = tier.to;
+  }
+  return 100;
+}
+
+function getValueWithTiers(
+  percentage: number,
+  min: number,
+  tiers: SliderTier[],
+): number {
+  const totalWidth = tiers.reduce((sum, t) => sum + t.width, 0);
+  let cumulativePercent = 0;
+  let tierStart = min;
+
+  for (const tier of tiers) {
+    const tierPercent = (tier.width / totalWidth) * 100;
+    if (percentage <= cumulativePercent + tierPercent) {
+      const progress =
+        tierPercent > 0 ? (percentage - cumulativePercent) / tierPercent : 0;
+      return tierStart + progress * (tier.to - tierStart);
+    }
+    cumulativePercent += tierPercent;
+    tierStart = tier.to;
+  }
+  return tiers[tiers.length - 1].to;
+}
+
+function snapToTierStep(
+  value: number,
+  min: number,
+  tiers: SliderTier[],
+): number {
+  const max = tiers[tiers.length - 1].to;
+  value = Math.max(min, Math.min(max, value));
+  let tierStart = min;
+
+  for (const tier of tiers) {
+    if (value <= tier.to) {
+      const offset = value - tierStart;
+      const snapped = Math.round(offset / tier.step) * tier.step;
+      return Math.min(tier.to, tierStart + snapped);
+    }
+    tierStart = tier.to;
+  }
+  return max;
+}
+
+function getTierStepSize(value: number, _min: number, tiers: SliderTier[]) {
+  for (const tier of tiers) {
+    if (value <= tier.to) return tier.step;
+  }
+  return tiers[tiers.length - 1].step;
 }
 
 // Format number with commas
@@ -84,6 +164,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
   min: externalMin,
   max: externalMax,
   step: externalStep,
+  tiers: externalTiers,
   formatValue,
   showSteps = false,
   showQuickSelect = true,
@@ -133,17 +214,32 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
     }
   }, [externalValue, formatValue, isExternallyControlled]);
 
-  // Determine if we should use complex stepping (original behavior) or simple stepping
+  // Determine stepping mode
+  const useTiers = externalTiers !== undefined && externalTiers.length > 0;
   const useComplexStepping =
-    !isExternallyControlled && min === defaultMin && max === defaultMax;
+    !useTiers &&
+    !isExternallyControlled &&
+    min === defaultMin &&
+    max === defaultMax;
 
   const breakPoint1 = useComplexStepping ? 100000 : min + (max - min) * 0.33;
   const breakPoint2 = useComplexStepping ? 200000 : min + (max - min) * 0.66;
 
-  // Memoize valid values for complex stepping
+  // Memoize valid values
   const validValues = useMemo(() => {
+    if (useTiers && externalTiers) {
+      const values: number[] = [];
+      let tierStart = min;
+      for (const tier of externalTiers) {
+        for (let i = tierStart; i <= tier.to; i += tier.step) {
+          values.push(i);
+        }
+        tierStart = tier.to;
+      }
+      return values;
+    }
+
     if (!useComplexStepping) {
-      // Simple stepping: generate values based on step
       const values = [];
       for (let i = min; i <= max; i += step) {
         values.push(i);
@@ -163,7 +259,16 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
       values.push(i);
     }
     return values;
-  }, [min, max, step, useComplexStepping, breakPoint1, breakPoint2]);
+  }, [
+    min,
+    max,
+    step,
+    useTiers,
+    externalTiers,
+    useComplexStepping,
+    breakPoint1,
+    breakPoint2,
+  ]);
 
   const steps = useMemo(() => {
     if (!showSteps) return [];
@@ -193,8 +298,11 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
   const currentPercentage = useMemo(() => {
     const workingValue = isDragging ? dragValue : currentValue;
 
+    if (useTiers && externalTiers) {
+      return getPercentageWithTiers(workingValue, min, externalTiers);
+    }
+
     if (!useComplexStepping) {
-      // Simple percentage calculation
       return ((workingValue - min) / (max - min)) * 100;
     }
 
@@ -216,12 +324,19 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
     isDragging,
     min,
     max,
+    useTiers,
+    externalTiers,
     useComplexStepping,
     breakPoint1,
     breakPoint2,
   ]);
 
   const currentStepSize = useMemo(() => {
+    if (useTiers && externalTiers) {
+      const workingValue = isDragging ? dragValue : currentValue;
+      return getTierStepSize(workingValue, min, externalTiers);
+    }
+
     if (!useComplexStepping) return step;
 
     const workingValue = isDragging ? dragValue : currentValue;
@@ -232,6 +347,9 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
     currentValue,
     dragValue,
     isDragging,
+    min,
+    useTiers,
+    externalTiers,
     useComplexStepping,
     step,
     breakPoint1,
@@ -246,9 +364,20 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
   // Handle value updates
   const updateValue = useCallback(
     (newValue: number) => {
-      const finalValue = useComplexStepping
-        ? getNearestStepValue(newValue, min, max, breakPoint1, breakPoint2)
-        : getSimpleStepValue(newValue, min, max, step);
+      let finalValue: number;
+      if (useTiers && externalTiers) {
+        finalValue = snapToTierStep(newValue, min, externalTiers);
+      } else if (useComplexStepping) {
+        finalValue = getNearestStepValue(
+          newValue,
+          min,
+          max,
+          breakPoint1,
+          breakPoint2,
+        );
+      } else {
+        finalValue = getSimpleStepValue(newValue, min, max, step);
+      }
 
       if (isExternallyControlled && externalOnChange) {
         externalOnChange(finalValue);
@@ -266,6 +395,8 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
       isExternallyControlled,
       externalOnChange,
       formatValue,
+      useTiers,
+      externalTiers,
       useComplexStepping,
       min,
       max,
@@ -282,11 +413,14 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
         setIsDragging(true);
       }
 
+      const percentage = (parseInt(e.target.value, 10) / 1000) * 100;
       let approximateValue: number;
+      let validValue: number;
 
-      if (useComplexStepping) {
-        // Original complex calculation
-        const percentage = (parseInt(e.target.value, 10) / 1000) * 100;
+      if (useTiers && externalTiers) {
+        approximateValue = getValueWithTiers(percentage, min, externalTiers);
+        validValue = snapToTierStep(approximateValue, min, externalTiers);
+      } else if (useComplexStepping) {
         approximateValue = getValueFromPercentage(
           percentage,
           min,
@@ -294,22 +428,19 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           breakPoint1,
           breakPoint2,
         );
+        validValue = getNearestStepValue(
+          approximateValue,
+          min,
+          max,
+          breakPoint1,
+          breakPoint2,
+        );
       } else {
-        // Simple linear calculation
         const sliderValue = parseInt(e.target.value, 10);
-        const percentage = sliderValue / 1000; // Assuming slider max is 1000
-        approximateValue = min + percentage * (max - min);
+        const pct = sliderValue / 1000;
+        approximateValue = min + pct * (max - min);
+        validValue = getSimpleStepValue(approximateValue, min, max, step);
       }
-
-      const validValue = useComplexStepping
-        ? getNearestStepValue(
-            approximateValue,
-            min,
-            max,
-            breakPoint1,
-            breakPoint2,
-          )
-        : getSimpleStepValue(approximateValue, min, max, step);
 
       setDragValue(validValue);
       const formatted = formatValue
@@ -332,6 +463,8 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
       isDragging,
       updateValue,
       formatValue,
+      useTiers,
+      externalTiers,
       useComplexStepping,
       min,
       max,
@@ -381,9 +514,11 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
       <div className="mb-4">
         {/* Editable input field */}
         <div className="relative mb-4">
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-blue-600 pointer-events-none">
-            {formatValue ? "" : "$"}
-          </span>
+          {!formatValue && (
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-blue-600 pointer-events-none">
+              $
+            </span>
+          )}
           <input
             id="loan-input"
             type="text"
@@ -392,7 +527,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
-            className={`w-full ps-2 pl-10 pr-4 py-3 ${valueTextSize ? `text-${valueTextSize}` : "text-2xl"} font-bold text-blue-600 bg-transparent border-2 border-transparent rounded-lg hover:border-blue-200 focus:border-blue-400 focus:outline-none transition-all duration-200`}
+            className={`w-full ${formatValue ? "pl-2" : "pl-10"} pr-4 py-3 ${valueTextSize ? `text-${valueTextSize}` : "text-2xl"} font-bold text-blue-600 bg-transparent border-2 border-transparent rounded-lg hover:border-blue-200 focus:border-blue-400 focus:outline-none transition-all duration-200`}
             placeholder="Enter amount"
           />
         </div>
@@ -484,7 +619,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
 
           {/* Thumb */}
           <div
-            className="absolute w-10 h-10 md:w-8 md:h-8 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform transition-transform duration-75 hover:scale-110 active:scale-95 z-20"
+            className="absolute w-10 h-10 bg-white border-4 border-blue-500 rounded-full shadow-lg will-change-transform z-20"
             style={{
               left: `${currentPercentage}%`,
               top: "50%",
@@ -493,7 +628,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           />
         </div>
 
-        {/* Hidden input with optimized range - expanded hit area for mobile */}
+        {/* Hidden input with expanded hit area */}
         <input
           type="range"
           min={0}
@@ -501,7 +636,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           step={1}
           value={currentPercentage * 10}
           onChange={handleChange}
-          className="absolute left-0 -top-7 w-full h-16 opacity-0 cursor-pointer z-30 touch-none"
+          className="absolute left-0 -top-10 w-full h-24 opacity-0 cursor-pointer z-30 touch-none"
         />
         {/* Min/Max labels */}
         <div className="flex justify-between text-sm text-gray-500 mt-4">
@@ -555,7 +690,10 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
                 min + (max - min) * 0.4,
                 min + (max - min) * 0.6,
                 min + (max - min) * 0.8,
-              ]
+              ].map((v) => {
+                const gran = v >= 100000 ? 25000 : 5000;
+                return Math.round(v / gran) * gran;
+              })
           ).map((quickValue) => (
             <button
               type="button"

@@ -58,7 +58,7 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
             onChange={handleSliderChange}
             min={minMonths}
             max={maxMonths}
-            step={6}
+            step={12}
             formatValue={(val) => {
               const years = Math.floor(val / 12);
               const months = val % 12;

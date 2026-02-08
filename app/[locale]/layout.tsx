@@ -9,7 +9,7 @@ import AnalyticsProvider from "@/components/AnalyticsProvider/AnalyticsProvider"
 import "../globals.css";
 import { getTranslations } from "next-intl/server";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://affordaloan.bg";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://affordaloan.com";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import LoanCalculatorStep1 from "@/components/LoanCalculatorStep1/LoanCalculatorStep1";
 import type { LoanData, InterestRates, UserContactData } from "@/types/loan";
 import type { Locale } from "@/i18n/config";
+import { trackStepTransition, trackFormSubmission } from "@/lib/analytics";
 import LoanCalculatorStep2 from "../LoanCalculatorStep2/LoanCalculatorStep2";
 import LoanCalculatorStep3 from "../LoanCalculatorStep3/LoanCalculatorStep3";
 
@@ -137,6 +138,7 @@ export default function LoanCalculatorFlow({
   );
 
   const handleStepComplete = (data: LoanData, newStep: number) => {
+    trackStepTransition(step, newStep);
     setLoanData(data);
     saveState({ loanData: data, userContact });
     setStep(newStep);
@@ -177,6 +179,9 @@ export default function LoanCalculatorFlow({
     if (!response.ok) {
       throw new Error("Failed to save user data");
     }
+
+    trackStepTransition(2, 3);
+    trackFormSubmission(data.loanType || "unknown", data.loanAmount);
 
     setLoanData(data);
     setUserContact(contact);

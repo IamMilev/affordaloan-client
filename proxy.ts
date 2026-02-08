@@ -17,7 +17,7 @@ export const config = {
   matcher: ["/((?!api|_next|.*\\..*).*)"],
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/") {

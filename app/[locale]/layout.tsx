@@ -54,7 +54,7 @@ export async function generateMetadata({
       type: "website",
       images: [
         {
-          url: "/og-image.png",
+          url: locale === "bg" ? "/og-image-bg.png" : "/og-image-en.png",
           width: 1200,
           height: 630,
           alt: title,
@@ -65,7 +65,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: ["/og-image.png"],
+      images: locale === "bg" ? ["/og-image-bg.png"] : ["/og-image-en.png"],
     },
   };
 }

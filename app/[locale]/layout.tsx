@@ -56,12 +56,14 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <NextIntlClientProvider messages={messages}>
-          <div className="fixed top-2 right-2 z-50">
-            <LanguageSwitcher />
-          </div>
-          {children}
-        </NextIntlClientProvider>
+        <main>
+          <NextIntlClientProvider messages={messages}>
+            <div className="fixed top-2 right-2 z-50">
+              <LanguageSwitcher />
+            </div>
+            {children}
+          </NextIntlClientProvider>
+        </main>
       </body>
     </html>
   );

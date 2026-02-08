@@ -8,6 +8,7 @@ interface IncomeInputProps {
   income: string;
   onIncomeChange: (income: string) => void;
   useSlider?: boolean;
+  label?: string;
 }
 
 const formatNumber = (num: number): string => {

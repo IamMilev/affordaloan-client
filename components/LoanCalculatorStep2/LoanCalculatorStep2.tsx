@@ -419,7 +419,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
                         formatValue={(val) =>
                           `${formatNumber(val)} ${currency}`
                         }
-                        label=""
+                        label={t("debt.label")}
                         valueTextSize="xl"
                         showDebugInfo={false}
                         showSteps={false}
@@ -474,7 +474,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
                           formatValue={(val) =>
                             `${formatNumber(val)} ${currency}`
                           }
-                          label=""
+                          label={t("property.title")}
                           valueTextSize="xl"
                           showDebugInfo={false}
                           showSteps={false}

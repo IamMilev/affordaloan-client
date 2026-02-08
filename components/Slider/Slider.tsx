@@ -166,6 +166,7 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
   step: externalStep,
   tiers: externalTiers,
   formatValue,
+  label,
   showSteps = false,
   showQuickSelect = true,
   showDebugInfo = true,
@@ -520,8 +521,9 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
             </span>
           )}
           <input
-            id="loan-input"
+            id={label}
             type="text"
+            aria-label={label}
             value={inputValue}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
@@ -634,6 +636,8 @@ const CustomRangeSlider: React.FC<CustomRangeSliderProps> = ({
           min={0}
           max={1000}
           step={1}
+          id={`${label}-hidden`}
+          aria-label={`${label}-hidden`}
           value={currentPercentage * 10}
           onChange={handleChange}
           className="absolute left-0 -top-10 w-full h-24 opacity-0 cursor-pointer z-30 touch-none"

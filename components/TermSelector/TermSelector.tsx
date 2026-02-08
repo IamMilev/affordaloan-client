@@ -66,6 +66,7 @@ const TermSelector: React.FC<TermSelectorProps> = ({ term, onTermChange }) => {
                 ? `${years} ${t("term.years")}`
                 : `${years} ${t("term.years")} ${months} ${tCommon("month")}`;
             }}
+            label={t("term.label")}
             showSteps={false}
             showDebugInfo={false}
             showQuickSelect={false}

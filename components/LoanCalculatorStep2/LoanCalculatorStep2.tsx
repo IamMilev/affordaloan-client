@@ -12,6 +12,7 @@ import {
   Check,
   User,
   Mail,
+  Phone,
   Loader2,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -29,6 +30,7 @@ interface Step2PersistedState {
   customRate: number | null;
   contactName: string;
   contactEmail: string;
+  contactPhone: string;
   latePaymentMonths: number;
 }
 
@@ -100,6 +102,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
   const [contactData, setContactData] = useState<UserContactData>({
     name: saved?.contactName ?? "",
     email: saved?.contactEmail ?? "",
+    phone: saved?.contactPhone ?? "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -173,6 +176,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
       customRate,
       contactName: contactData.name,
       contactEmail: contactData.email,
+      contactPhone: contactData.phone,
       latePaymentMonths,
     });
   }, [
@@ -181,6 +185,7 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
     customRate,
     contactData.name,
     contactData.email,
+    contactData.phone,
     latePaymentMonths,
   ]);
 
@@ -297,30 +302,59 @@ const LoanCalculatorStep2: React.FC<LoanCalculatorStep2Props> = ({
 
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
                 <div className="space-y-4">
-                  {/* Name Input */}
-                  <div>
-                    <label
-                      htmlFor="contact-name"
-                      className="block text-sm font-semibold text-gray-700 mb-2"
-                    >
-                      {t("contact.name")}{" "}
-                      <span className="text-blue-600">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        id="contact-name"
-                        type="text"
-                        value={contactData.name}
-                        onChange={(e) =>
-                          setContactData({
-                            ...contactData,
-                            name: e.target.value,
-                          })
-                        }
-                        placeholder={t("contact.namePlaceholder")}
-                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
-                      />
+                  {/* Name and Phone Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Name Input */}
+                    <div>
+                      <label
+                        htmlFor="contact-name"
+                        className="block text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        {t("contact.name")}{" "}
+                        <span className="text-blue-600">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          id="contact-name"
+                          type="text"
+                          value={contactData.name}
+                          onChange={(e) =>
+                            setContactData({
+                              ...contactData,
+                              name: e.target.value,
+                            })
+                          }
+                          placeholder={t("contact.namePlaceholder")}
+                          className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone Input */}
+                    <div>
+                      <label
+                        htmlFor="contact-phone"
+                        className="block text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        {t("contact.phone")}
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          id="contact-phone"
+                          type="tel"
+                          value={contactData.phone}
+                          onChange={(e) =>
+                            setContactData({
+                              ...contactData,
+                              phone: e.target.value,
+                            })
+                          }
+                          placeholder={t("contact.phonePlaceholder")}
+                          className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 

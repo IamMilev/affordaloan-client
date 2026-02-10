@@ -35,6 +35,7 @@ export interface ContactData {
 export interface UserContactData {
   name: string;
   email: string;
+  phone: string;
 }
 
 export interface LoanTypeDefaults {

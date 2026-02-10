@@ -11,10 +11,19 @@ Next.js 15 (App Router, Turbopack) + React 19 + TypeScript frontend for a Bulgar
 ```bash
 pnpm dev          # Dev server with Turbopack (port 3000)
 pnpm build        # Production build (standalone output)
+pnpm test         # Run tests (Vitest)
+pnpm test:watch   # Run tests in watch mode
 pnpm lint         # Lint with Biome
 pnpm format       # Format with Biome (--write)
 docker build -t affordaloan-client .  # Build Docker image
 ```
+
+## Testing
+
+- **Framework**: Vitest + React Testing Library + jsdom
+- **Config**: `vitest.config.ts`, setup in `vitest.setup.ts`
+- **Convention**: Tests live next to the component they test (e.g. `LoanCalculatorStep2/LoanCalculatorStep2.test.tsx`)
+- **After every feature**: run `pnpm test` and ensure all tests pass before considering work complete. Write tests for new functionality.
 
 ## Environment Variables
 

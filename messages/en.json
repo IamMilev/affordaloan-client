@@ -37,8 +37,10 @@
       "email": "Email",
       "namePlaceholder": "Your name",
       "emailPlaceholder": "example@email.com",
+      "phone": "Phone",
+      "phonePlaceholder": "+359 88 888 8888",
       "emailError": "Please enter a valid email address",
-      "privacyNote": "Your data is protected and will not be shared with third parties. By pressing 'View Results' you agree with the terms and conditions"
+      "privacyNote": "You will receive an email with the top 3 banks with the best conditions. By continuing, you agree to the Privacy Policy."
     },
     "debt": {
       "title": "Monthly Active Debt Payments",

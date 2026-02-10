@@ -160,6 +160,7 @@ export default function LoanCalculatorFlow({
         user: {
           name: contact.name,
           email: contact.email,
+          phone: contact.phone || undefined,
         },
         loanData: {
           loanType: data.loanType,
